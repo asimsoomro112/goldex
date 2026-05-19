@@ -21,7 +21,28 @@ async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response
 }
 
 export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
-  // 1. Try Binance PAXG/USDT (Real-time, free, no key, updates every second)
+  // 1. Try Binance Futures XAU/USDT (Real-time Gold Perpetual Contract - highly permissive for cloud IPs)
+  try {
+    const response = await fetchWithTimeout("https://fapi.binance.com/fapi/v1/ticker/price?symbol=XAUUSDT", 5000);
+    if (response.ok) {
+      const data = await response.json();
+      const price = Number(data?.price);
+      if (Number.isFinite(price) && price > 0) {
+        return {
+          symbol: "XAU/USD",
+          price,
+          currency: "USD",
+          updatedAt: new Date().toISOString(),
+          source: "Binance Futures (XAU/USDT)",
+          configured: true,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Binance Futures XAUUSDT fetch failed, trying Spot Binance PAXG...", err);
+  }
+
+  // 2. Try Binance Spot PAXG/USDT (Real-time, free, no key)
   try {
     const response = await fetchWithTimeout("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT", 5000);
     if (response.ok) {
@@ -39,10 +60,10 @@ export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
       }
     }
   } catch (err) {
-    console.warn("Binance gold price fetch failed, trying Bybit...", err);
+    console.warn("Binance Spot gold price fetch failed, trying Bybit...", err);
   }
 
-  // 2. Try Bybit PAXG/USDT (Real-time, free, no key)
+  // 3. Try Bybit PAXG/USDT (Real-time, free, no key)
   try {
     const response = await fetchWithTimeout("https://api.bybit.com/v5/market/tickers?category=spot&symbol=PAXGUSDT", 5000);
     if (response.ok) {
@@ -63,7 +84,7 @@ export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
     console.warn("Bybit gold price fetch failed, trying KuCoin...", err);
   }
 
-  // 3. Try KuCoin PAXG/USDT (Highly permissive for cloud provider IPs)
+  // 4. Try KuCoin PAXG/USDT (Highly permissive for cloud provider IPs)
   try {
     const response = await fetchWithTimeout("https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=PAXG-USDT", 5000);
     if (response.ok) {
@@ -84,7 +105,7 @@ export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
     console.warn("KuCoin gold price fetch failed, trying Gate.io...", err);
   }
 
-  // 4. Try Gate.io PAXG/USDT (Highly permissive for cloud provider IPs)
+  // 5. Try Gate.io PAXG/USDT (Highly permissive for cloud provider IPs)
   try {
     const response = await fetchWithTimeout("https://api.gateio.ws/api/v4/spot/tickers?currency_pair=PAXG_USDT", 5000);
     if (response.ok) {
@@ -105,7 +126,7 @@ export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
     console.warn("Gate.io gold price fetch failed, trying CoinGecko...", err);
   }
 
-  // 5. Try CoinGecko PAX Gold (Free api, no key, cloud permissive)
+  // 6. Try CoinGecko PAX Gold (Free api, no key, cloud permissive)
   try {
     const response = await fetchWithTimeout("https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd", 5000);
     if (response.ok) {
