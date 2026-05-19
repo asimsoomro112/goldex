@@ -1,6 +1,6 @@
 import React from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Users, CheckCircle2, Clock, Copy, AlertCircle } from 'lucide-react';
+import { Users, CheckCircle2, Clock, Copy, AlertCircle, Share2, UserPlus, TrendingUp, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
 import { useDashboardData, useReferredUsers, useLedgerEntries } from '@/lib/dashboardData';
@@ -111,15 +111,83 @@ export function ReferralsPage() {
         />
       </div>
 
-      {/* Referral Program Guidelines Alert */}
-      <div className="flex items-start gap-4 p-5 rounded-2xl border border-gold-500/10 bg-dark-900/40 text-sm text-text-secondary leading-relaxed">
-        <AlertCircle className="w-5 h-5 text-gold-500 shrink-0 mt-0.5" />
-        <div>
-          <span className="text-white font-medium">How it works:</span> 
-          <ul className="list-disc pl-5 mt-2 space-y-1.5">
-            <li><span className="text-white font-medium">One-Time Sign-up & Deposit Payout:</span> When a referred user completes their first deposit & investment (minimum $50.00), you earn a one-time commission of $10.00 per $50.00 of their initial investment, and they receive a welcome bonus of $5.00 per $50.00. Subsequent investments do not trigger this bonus.</li>
-            <li><span className="text-white font-medium">10% Daily Profit Share:</span> Every time your referred partners receive profit distributions on their active investments, you automatically receive a matching 10% profit commission credited directly to your withdrawable profit balance.</li>
-          </ul>
+      {/* How It Works Steps */}
+      <div className="flex flex-col gap-5">
+        <h2 className="text-xl font-display font-medium text-white flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-gold-500" />
+          How the Referral Program Works
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          
+          {/* Step 1 */}
+          <div className="bg-dark-900/40 border border-gold-500/10 rounded-2xl p-5 relative overflow-hidden flex flex-col gap-4">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex justify-between items-center">
+              <div className="w-9 h-9 rounded-xl bg-gold-500/10 flex items-center justify-center border border-gold-500/20">
+                <Share2 className="w-4.5 h-4.5 text-gold-500" />
+              </div>
+              <span className="text-xl font-bold font-mono text-gold-500/20">01</span>
+            </div>
+            <div>
+              <h3 className="text-white font-medium text-sm mb-1">Share Your Link</h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                Copy your unique invite link or referral code and share it with your network or partners.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="bg-dark-900/40 border border-gold-500/10 rounded-2xl p-5 relative overflow-hidden flex flex-col gap-4">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex justify-between items-center">
+              <div className="w-9 h-9 rounded-xl bg-gold-500/10 flex items-center justify-center border border-gold-500/20">
+                <UserPlus className="w-4.5 h-4.5 text-gold-500" />
+              </div>
+              <span className="text-xl font-bold font-mono text-gold-500/20">02</span>
+            </div>
+            <div>
+              <h3 className="text-white font-medium text-sm mb-1">Partner Registers</h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                Your partner registers using your link. Their signup welcome bonus is added as pending.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="bg-dark-900/40 border border-gold-500/10 rounded-2xl p-5 relative overflow-hidden flex flex-col gap-4">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex justify-between items-center">
+              <div className="w-9 h-9 rounded-xl bg-gold-500/10 flex items-center justify-center border border-gold-500/20">
+                <TrendingUp className="w-4.5 h-4.5 text-gold-500" />
+              </div>
+              <span className="text-xl font-bold font-mono text-gold-500/20">03</span>
+            </div>
+            <div>
+              <h3 className="text-white font-medium text-sm mb-1">First Investment</h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                They complete a first deposit & invest a <span className="text-white font-medium">minimum of $50.00</span> to activate the reward status.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="bg-dark-900/40 border border-gold-500/10 rounded-2xl p-5 relative overflow-hidden flex flex-col gap-4">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex justify-between items-center">
+              <div className="w-9 h-9 rounded-xl bg-gold-500/10 flex items-center justify-center border border-gold-500/20">
+                <Gift className="w-4.5 h-4.5 text-gold-500" />
+              </div>
+              <span className="text-xl font-bold font-mono text-gold-500/20">04</span>
+            </div>
+            <div>
+              <h3 className="text-white font-medium text-sm mb-1">Rewards Released</h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                You get a one-time <span className="text-white font-medium">$10 per $50</span> commission (they get <span className="text-white font-medium">$5 per $50</span>) plus a <span className="text-gold-500 font-medium">10% daily share</span> on their profits!
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
 
