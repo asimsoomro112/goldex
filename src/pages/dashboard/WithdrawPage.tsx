@@ -144,7 +144,7 @@ export function WithdrawPage() {
                 <span className="text-text-secondary">Withdrawal Rule</span>
                 <span className="text-text-muted">Profit must reach $50</span>
               </div>
-              <p className="text-xs text-text-muted leading-relaxed">After this profit withdrawal is marked paid, the selected investment stops generating daily profit.</p>
+              <p className="text-xs text-text-muted leading-relaxed">Profit withdrawals are deducted from your balance, and the package continues to generate daily profit indefinitely.</p>
             </div>
 
             <div className="flex-1">

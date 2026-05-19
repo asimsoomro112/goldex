@@ -361,7 +361,7 @@ export function InvestPage() {
                     </GoldButton>
                   </div>
                 )}
-                <p className="text-xs text-text-muted text-center">Principal stays locked. Profit starts after live deposit verification and stops after profit withdrawal/settlement.</p>
+                <p className="text-xs text-text-muted text-center">Principal is non-refundable. Profit starts generating from $0 after verification, and can be withdrawn indefinitely once it reaches $50.</p>
               </div>
             </div>
           </GlassCard>

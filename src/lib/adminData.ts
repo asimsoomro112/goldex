@@ -336,9 +336,7 @@ export async function markWithdrawalPaid(withdrawal: AdminRecord<Withdrawal>, ac
     });
 
     transaction.update(investmentRef, {
-      status: 'withdrawn',
       profitAvailable: increment(-amount),
-      withdrawnAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
