@@ -159,6 +159,7 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
     const investmentRef = doc(db!, 'users', deposit.uid, 'investments', deposit.investmentId!);
     const depositSnapshot = await transaction.get(depositRef);
     const investmentSnapshot = await transaction.get(investmentRef);
+    const userSnapshot = await transaction.get(userRef);
 
     if (!depositSnapshot.exists()) {
       throw new Error('Deposit record no longer exists.');
@@ -172,6 +173,11 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
     if (investmentSnapshot.data().status !== 'pending_deposit') {
       throw new Error('Linked investment is not waiting for deposit approval.');
     }
+    if (!userSnapshot.exists()) {
+      throw new Error('User record no longer exists.');
+    }
+
+    const currentUserData = userSnapshot.data();
 
     transaction.update(depositRef, {
       status: 'verified',
@@ -187,8 +193,8 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
       updatedAt: serverTimestamp(),
     });
 
-    // Check and process referral commissions
-    if (referrerRef && userSnapshotData) {
+    // Check and process referral commissions (strictly one-time check)
+    if (referrerRef && currentUserData && currentUserData.referralStatus === 'pending') {
       const referrerSnapshot = await transaction.get(referrerRef);
       if (referrerSnapshot.exists()) {
         const commAmount = Math.floor(amount / 50) * 10;
@@ -208,7 +214,7 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
             status: 'verified',
             refId: deposit.id,
             refPath: `users/${deposit.uid}/deposits/${deposit.id}`,
-            description: `Referral commission from ${userSnapshotData.displayName || 'referred user'} (First investment of $${amount})`,
+            description: `One-time referral commission from ${currentUserData.displayName || 'referred user'} (First investment of $${amount})`,
             createdAt: serverTimestamp(),
           });
 
@@ -228,7 +234,7 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
             status: 'verified',
             refId: deposit.id,
             refPath: `users/${deposit.uid}/deposits/${deposit.id}`,
-            description: `Welcome bonus for signing up via referral (First investment of $${amount})`,
+            description: `One-time referral welcome bonus (First investment of $${amount})`,
             createdAt: serverTimestamp(),
           });
 
