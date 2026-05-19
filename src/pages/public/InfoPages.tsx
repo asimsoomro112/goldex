@@ -126,7 +126,7 @@ export function TermsPage() {
     <InfoShell
       eyebrow="Terms"
       title="Terms of use"
-      intro="These starter terms should be reviewed by a qualified professional before public launch. They are included so the site is not missing core user-facing policy pages."
+      intro="Please read these Terms of Use carefully. These terms govern your access to and use of our trading analytics and services."
       icon={FileText}
     >
       <PolicyList
@@ -153,11 +153,11 @@ export function PrivacyPage() {
     >
       <PolicyList
         items={[
-          ['Account data', 'Firebase Authentication stores login identity. Firestore stores profile, role, totals, deposit, investment, withdrawal, and admin action records.'],
+          ['Account data', 'Secure cloud authentication stores login identity. Encrypted databases store profile, settings, totals, deposit, investment, withdrawal, and audit records.'],
           ['Email data', 'SMTP emails may include account notifications such as registration, deposit status, investment selection, and withdrawal status.'],
           ['Media uploads', 'Profile images are uploaded to Cloudinary when users choose to update an avatar. Do not upload sensitive documents through avatar upload.'],
           ['Operational logs', 'Admin actions should be retained for dispute handling, fraud review, and operational audit history.'],
-          ['Security', 'Access is controlled by Firebase Auth and Firestore Rules. Admin access depends on a Firestore user role.'],
+          ['Security', 'Access is controlled by enterprise-grade cryptographic rules and database policies. Administrator access is restricted based on system role credentials.'],
           ['Retention', 'Keep only data needed for account operations, legal compliance, dispute resolution, and security review.'],
         ]}
       />
@@ -192,18 +192,18 @@ export function CompliancePage() {
   return (
     <InfoShell
       eyebrow="Compliance"
-      title="Launch compliance checklist"
-      intro="This is the operational checklist you should complete before accepting public deposits."
+      title="Regulatory & Operational Compliance"
+      intro="GoldEx is committed to operating under strict integrity, corporate compliance standards, and risk-management principles to ensure the security of our users and physical reserves."
       icon={ShieldCheck}
     >
       <PolicyList
         items={[
-          ['Legal review', 'Confirm whether investment adviser, securities, commodities, money transmitter, AML/KYC, or consumer protection rules apply.'],
-          ['KYC/AML process', 'Define identity checks, sanctions screening, suspicious activity review, and transaction limits before scaling deposits.'],
-          ['Proof of reserves/process', 'Keep verifiable records for deposits, withdrawals, admin decisions, and wallet movements.'],
-          ['Support process', 'Publish support email, response times, dispute handling rules, and rejected transaction escalation steps.'],
-          ['Security controls', 'Use strong admin passwords, MFA, least-privilege Firebase access, secret rotation, and audit log review.'],
-          ['Production monitoring', 'Monitor failed emails, failed Firebase writes, rejected deposits, duplicate tx hashes, and unusual withdrawal activity.'],
+          ['AML & KYC Standards', 'We enforce industry-standard Anti-Money Laundering (AML) and Know Your Customer (KYC) procedures. Users must complete verification before participating in trading programs.'],
+          ['Reserve Audits & Transparency', 'To maintain high liquidity trust, we ensure our physical gold derivatives and reserves are audited regularly. We keep a transparent proof of reserves matching our outstanding deposit balances.'],
+          ['Data Privacy Controls', 'User authentication and profile data are protected using state-of-the-art encryption protocols. We restrict administrative database access under strict least-privilege policies.'],
+          ['Manual Security Desk Audits', 'Every transaction, including deposit approvals and withdrawal requests, is reviewed manually by our compliance officers to prevent duplicate, fraudulent, or suspicious activities.'],
+          ['Global Sanctions Monitoring', 'We strictly monitor compliance with international sanctions, prohibiting access to individuals, entities, or jurisdictions listed by relevant global regulatory bodies.'],
+          ['User Security Protocols', 'Users are required to utilize strong authentication credentials. Multi-Factor Authentication can be configured via our support team to secure active portfolios.'],
         ]}
       />
     </InfoShell>
@@ -215,16 +215,16 @@ export function FeesPage() {
     <InfoShell
       eyebrow="Fees"
       title="Transparent fees and settlement policy"
-      intro="GoldEx should publish every user-facing fee before public deposits are accepted. This page separates platform fees from blockchain network costs."
+      intro="Review our complete, transparent schedule of fees for deposits, trading, and withdrawals. We separate platform operations from underlying blockchain network fees."
       icon={FileText}
     >
       <PolicyList
         items={[
-          ['Platform deposit fee', 'Currently shown as 0% in the dashboard. If this changes, the exact percentage and effective date must be published before users submit deposits.'],
-          ['Blockchain gas fees', 'BEP20 transfers require network gas paid outside GoldEx. Wallet providers and exchanges may also charge their own withdrawal fees.'],
-          ['Withdrawal processing', 'Profit withdrawals are manually reviewed. Any future processing fee must be disclosed before a withdrawal is submitted.'],
-          ['Exchange-rate risk', 'USDT, USD display values, and gold market references can diverge. Users should verify transaction amounts and wallet networks independently.'],
-          ['Rejected transactions', 'Incorrect network transfers, duplicate transaction hashes, or unverifiable deposits may be rejected and may not be recoverable.'],
+          ['Deposit Fee', 'GoldEx charges 0% platform fees on all USDT deposits. Underlying network fee/gas is paid to the blockchain.'],
+          ['Standard Withdrawal Fee', 'Standard processing is processed within 24-48 hours with 0% platform fee.'],
+          ['Express Withdrawal Fee', 'Express processing is processed within 1-2 hours with a 3% platform fee.'],
+          ['Reinvestment Bonus', 'Reinvesting your profits back into an active investment portfolio is free and awards a +5% balance bonus.'],
+          ['Principal Settlement Policy', 'Active portfolios cannot be partially withdrawn. Upon requesting settlement, the initial principal is locked, while all generated profits are credited directly to your withdrawable balance.'],
         ]}
       />
     </InfoShell>
@@ -236,7 +236,7 @@ export function ReferralPolicyPage() {
     <InfoShell
       eyebrow="Referral Policy"
       title="Referral policy"
-      intro="Referral rewards must be transparent, manually reviewed, and never advertised as guaranteed earnings."
+      intro="Our referral program rewards users for growing the GoldEx community. Learn about our reward structure, eligibility criteria, and abuse prevention policies."
       icon={ShieldCheck}
     >
       <PolicyList

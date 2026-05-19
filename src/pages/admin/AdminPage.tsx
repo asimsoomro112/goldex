@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, CircleDollarSign, Home, LogOut, RefreshCw, ShieldCheck, Users, Wallet, XCircle, MessageSquare, HelpCircle, Send } from 'lucide-react';
+import { CheckCircle2, CircleDollarSign, Home, LogOut, RefreshCw, ShieldCheck, Users, Wallet, XCircle, MessageSquare, HelpCircle, Send, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   addInvestmentProfit,
@@ -12,6 +12,7 @@ import {
   updateKycStatus,
   updateWalletStatus,
   useAdminData,
+  distributeGlobalProfit,
 } from '@/lib/adminData';
 import { useAuth } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
@@ -23,6 +24,9 @@ export function AdminPage() {
   const [profitInputs, setProfitInputs] = useState<Record<string, string>>({});
   const [payoutTxInputs, setPayoutTxInputs] = useState<Record<string, string>>({});
   const [activeSection, setActiveSection] = useState<'overview' | 'deposits' | 'investments' | 'withdrawals' | 'users' | 'kyc' | 'wallets' | 'approvals' | 'audit' | 'support'>('overview');
+
+  const [globalRate, setGlobalRate] = useState('');
+  const [distributingYield, setDistributingYield] = useState(false);
 
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [adminReplyMsg, setAdminReplyMsg] = useState('');
@@ -170,6 +174,59 @@ export function AdminPage() {
             </div>
           )}
 
+          {/* Global Daily Yield Distribution */}
+          {(activeSection === 'overview' || activeSection === 'investments') && (
+            <div className="gc p-6 border-gold-500/15 bg-dark-950/80 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+              <h3 className="text-lg font-medium text-white flex items-center gap-2 mb-3">
+                <Coins className="w-5 h-5 text-gold-500" />
+                Global Daily Yield Distribution
+              </h3>
+              <p className="text-xs text-text-muted mb-4">
+                Distribute daily profit yield globally to all active portfolios in a single action. Enter rate as a percentage of the principal.
+              </p>
+              <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 space-y-2 w-full">
+                  <label className="text-xs text-text-secondary block">Yield Rate (%)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.1"
+                      max="5.0"
+                      value={globalRate}
+                      onChange={(e) => setGlobalRate(e.target.value)}
+                      placeholder="0.75"
+                      className="input-gold font-mono text-sm py-3 pl-4 pr-12 w-full"
+                    />
+                    <span className="absolute inset-y-0 right-4 flex items-center text-sm font-semibold text-text-secondary">%</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={distributingYield || !globalRate}
+                  onClick={async () => {
+                    const rate = Number(globalRate);
+                    if (!rate || rate <= 0) return toast.error('Enter a valid percentage rate.');
+                    if (!window.confirm(`Are you sure you want to distribute ${rate}% yield to all active portfolios?`)) return;
+                    setDistributingYield(true);
+                    try {
+                      await distributeGlobalProfit(rate, adminUser?.uid || 'unknown-admin');
+                      toast.success(`Successfully distributed ${rate}% yield to all active portfolios!`);
+                      setGlobalRate('');
+                    } catch (err: any) {
+                      toast.error(err.message || 'Yield distribution failed.');
+                    } finally {
+                      setDistributingYield(false);
+                    }
+                  }}
+                  className="btn-gold h-12 px-6 text-sm font-semibold flex items-center gap-2 whitespace-nowrap min-w-[200px] justify-center w-full md:w-auto"
+                >
+                  {distributingYield ? 'Distributing...' : 'Distribute Global Yield'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {loading && <div className="gc p-6 text-text-muted">Loading admin data...</div>}
 
           {(activeSection === 'overview' || activeSection === 'deposits') && <Section title="Pending Deposits">
@@ -268,12 +325,13 @@ export function AdminPage() {
             ))}
           </Table>
         </Section>}
-
         {(activeSection === 'overview' || activeSection === 'withdrawals') && <Section title="Pending Withdrawals">
-          <Table headers={['User', 'Amount', 'Investment', 'Wallet', 'Status', 'Actions']}>
-            {pendingWithdrawals.length === 0 ? <EmptyRow colSpan={6} label="No pending withdrawals." /> : pendingWithdrawals.map((withdrawal) => {
-              const linkedInv = investments.find((inv) => inv.id === withdrawal.investmentId);
-              const planName = linkedInv ? (Number(linkedInv.amount || 0) >= 5000 ? 'Elite' : Number(linkedInv.amount || 0) >= 500 ? 'Growth' : 'Starter') : 'N/A';
+          <Table headers={['User', 'Type', 'Speed', 'Amount', 'Fee', 'Wallet', 'Status', 'Actions']}>
+            {pendingWithdrawals.length === 0 ? <EmptyRow colSpan={8} label="No pending withdrawals." /> : pendingWithdrawals.map((withdrawal) => {
+              const isSettlement = withdrawal.type === 'settlement';
+              const speedTier = withdrawal.speed || 'standard';
+              const feeAmount = Number(withdrawal.fee || 0);
+
               return (
                 <tr key={withdrawal.id} className="border-b border-gold-500/10">
                   <td className="px-4 py-3 text-xs text-text-secondary">
@@ -282,42 +340,47 @@ export function AdminPage() {
                       <p className="text-[10px] text-text-muted">{findUser(withdrawal.uid)?.email || withdrawal.uid}</p>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      isSettlement ? 'bg-danger/15 text-danger border border-danger/25' : 'bg-gold-500/15 text-gold-500 border border-gold-500/25'
+                    }`}>
+                      {isSettlement ? 'Settlement' : 'Profit'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs capitalize text-white font-medium">
+                    {speedTier}
+                  </td>
                   <td className="px-4 py-3 font-mono text-white">${Number(withdrawal.amount || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    <div>
-                      <p className="font-sans font-medium text-gold-500">{planName}</p>
-                      <p className="text-[10px] text-text-muted">{withdrawal.investmentId || '-'}</p>
+                  <td className="px-4 py-3 font-mono text-danger">${feeAmount.toFixed(2)}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-text-muted max-w-[180px] truncate">{withdrawal.walletAddress}</td>
+                  <td className="px-4 py-3"><span className="badge badge-gold">{withdrawal.status}</span></td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        value={payoutTxInputs[withdrawal.id] || ''}
+                        onChange={(event) => setPayoutTxInputs((prev) => ({ ...prev, [withdrawal.id]: event.target.value }))}
+                        className="input-gold h-9 py-1 max-w-[180px] font-mono text-xs"
+                        placeholder="Payout tx hash"
+                      />
+                      <button onClick={() => runAction(async () => {
+                        await markWithdrawalPaid(withdrawal, adminUser?.uid || 'unknown-admin', payoutTxInputs[withdrawal.id]);
+                        const account = findUser(withdrawal.uid);
+                        await sendEmail('withdrawal_paid', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount } });
+                      }, 'Withdrawal marked paid')} className="btn-gold h-9 px-3 text-xs">Paid</button>
+                      <button onClick={() => {
+                        const reason = window.prompt("Enter withdrawal rejection reason:");
+                        if (reason === null) return;
+                        runAction(async () => {
+                          await rejectWithdrawal(withdrawal, adminUser?.uid || 'unknown-admin', reason);
+                          const account = findUser(withdrawal.uid);
+                          await sendEmail('withdrawal_rejected', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount, rejectionReason: reason } });
+                        }, 'Withdrawal rejected');
+                      }} className="btn-ghost h-9 px-3 text-xs text-danger">Reject</button>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-text-muted max-w-[280px] truncate">{withdrawal.walletAddress}</td>
-                <td className="px-4 py-3"><span className="badge badge-gold">{withdrawal.status}</span></td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      value={payoutTxInputs[withdrawal.id] || ''}
-                      onChange={(event) => setPayoutTxInputs((prev) => ({ ...prev, [withdrawal.id]: event.target.value }))}
-                      className="input-gold h-9 py-1 max-w-[180px] font-mono text-xs"
-                      placeholder="Payout tx hash"
-                    />
-                    <button onClick={() => runAction(async () => {
-                      await markWithdrawalPaid(withdrawal, adminUser?.uid || 'unknown-admin', payoutTxInputs[withdrawal.id]);
-                      const account = findUser(withdrawal.uid);
-                      await sendEmail('withdrawal_paid', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount } });
-                    }, 'Withdrawal marked paid')} className="btn-gold h-9 px-3 text-xs">Paid</button>
-                     <button onClick={() => {
-                       const reason = window.prompt("Enter withdrawal rejection reason (e.g. Wallet address invalid, account check required, etc.):");
-                       if (reason === null) return;
-                       runAction(async () => {
-                         await rejectWithdrawal(withdrawal, adminUser?.uid || 'unknown-admin', reason);
-                         const account = findUser(withdrawal.uid);
-                         await sendEmail('withdrawal_rejected', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount, rejectionReason: reason } });
-                       }, 'Withdrawal rejected');
-                     }} className="btn-ghost h-9 px-3 text-xs text-danger">Reject</button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+                </tr>
+              );
+            })}
           </Table>
         </Section>}
 

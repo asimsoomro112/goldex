@@ -143,7 +143,7 @@ export function ReferralLandingPage() {
                 maxWidth: 620, margin: '0 auto',
               }}
             >
-              Referral links, tier status, and verified network rewards are displayed directly from live Firestore account records.
+              Referral links, tier status, and verified network rewards are displayed directly from live secure account records.
             </motion.p>
           </div>
         </section>

@@ -252,15 +252,17 @@ export function SettingsPage() {
                     <button type="button" onClick={handleRefreshUser} className="btn-ghost h-10 px-4 rounded-xl text-sm">Refresh Status</button>
                   </div>
                 </div>
+
                 <div className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-5">
                   <h3 className="text-white font-medium mb-2">Password Reset</h3>
-                  <p className="text-sm text-text-secondary leading-7 mb-4">Firebase will send a secure reset link to your account email. Use this for password changes instead of entering your current password inside the dashboard.</p>
+                  <p className="text-sm text-text-secondary leading-7 mb-4">We will send a secure reset link to your registered email address. Use this link to safely update your password and keep your account protected.</p>
                   <GoldButton type="button" onClick={handlePasswordReset} className="h-10 px-6">Send Reset Email</GoldButton>
                 </div>
+
                 <div className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-5">
-                  <h3 className="text-white font-medium mb-2">Multi-Factor Authentication</h3>
-                  <p className="text-sm text-text-secondary leading-7">Firebase phone/TOTP MFA requires Identity Platform and a verified email before enrollment. This account is ready for MFA enrollment once the project provider is enabled in Firebase Console.</p>
-                  <p className="text-xs text-text-muted mt-3">Admin accounts should use separate protected Google accounts with MFA enforced.</p>
+                  <h3 className="text-white font-medium mb-2">Multi-Factor Authentication (MFA)</h3>
+                  <p className="text-sm text-text-secondary leading-7">Enhance your account security by enabling Multi-Factor Authentication. Once configured, you will be required to provide a verification code during login.</p>
+                  <p className="text-xs text-text-muted mt-3">To configure an authenticator app (such as Google Authenticator), please contact our security support desk.</p>
                 </div>
               </div>
             </GlassCard>

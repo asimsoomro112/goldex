@@ -51,7 +51,7 @@ const STEPS = [
     icon: UserPlus,
     img: '/images/Create Account.png',
     accentColor: '#60A5FA',
-    desc: 'Sign up to gain access to our secure platform. Every user account is secured by our enterprise-grade Firebase authentication to ensure maximum data privacy and protection.',
+    desc: 'Sign up to gain access to our secure platform. Every user account is secured by our enterprise-grade cryptographic authentication protocols to ensure maximum data privacy and protection.',
   },
   {
     num: '02',

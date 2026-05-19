@@ -237,7 +237,14 @@ export async function createDepositRequest(uid: string, amount: number, txHash?:
   await batch.commit();
 }
 
-export async function createWithdrawalRequest(uid: string, amount: number, walletAddress: string, investmentId: string) {
+export async function createWithdrawalRequest(
+  uid: string,
+  amount: number,
+  walletAddress: string,
+  investmentId: string,
+  speed: 'standard' | 'express',
+  fee: number
+) {
   ensureDb();
   if (!Number.isFinite(amount) || amount < MIN_PROFIT_WITHDRAWAL) {
     throw new Error('Minimum profit withdrawal is $50.00');
@@ -254,6 +261,9 @@ export async function createWithdrawalRequest(uid: string, amount: number, walle
     walletAddress,
     investmentId,
     method: 'usdt_bep20',
+    type: 'standard',
+    speed,
+    fee,
     status: 'pending',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -265,10 +275,155 @@ export async function createWithdrawalRequest(uid: string, amount: number, walle
     status: 'pending',
     refId: withdrawalRef.id,
     refPath: `users/${uid}/withdrawals/${withdrawalRef.id}`,
-    metadata: { walletAddress, investmentId },
+    metadata: { walletAddress, investmentId, speed, fee },
     createdAt: serverTimestamp(),
   });
 }
+
+export async function reinvestProfit(uid: string, amount: number, sourceInvestmentId: string, targetInvestmentId?: string) {
+  ensureDb();
+  if (!Number.isFinite(amount) || amount < MIN_PROFIT_WITHDRAWAL) {
+    throw new Error('Minimum reinvestment amount is $50.00');
+  }
+
+  await runTransaction(db!, async (transaction) => {
+    const userRef = doc(db!, 'users', uid);
+    const sourceInvRef = doc(db!, 'users', uid, 'investments', sourceInvestmentId);
+    
+    const userSnap = await transaction.get(userRef);
+    const sourceInvSnap = await transaction.get(sourceInvRef);
+
+    if (!userSnap.exists()) throw new Error('User record not found.');
+    if (!sourceInvSnap.exists()) throw new Error('Source investment record not found.');
+
+    const available = Number(userSnap.data()?.totals?.withdrawableProfit || 0);
+    const sourceInvAvailable = Number(sourceInvSnap.data()?.profitAvailable || 0);
+
+    if (available < amount || sourceInvAvailable < amount) {
+      throw new Error('Insufficient profit available.');
+    }
+
+    const bonusAmount = amount * 1.05; // 5% bonus
+
+    // Deduct from source investment & user totals
+    transaction.update(sourceInvRef, {
+      profitAvailable: increment(-amount),
+      updatedAt: serverTimestamp(),
+    });
+
+    transaction.update(userRef, {
+      'totals.withdrawableProfit': increment(-amount),
+      'totals.lockedPrincipal': increment(bonusAmount),
+      updatedAt: serverTimestamp(),
+    });
+
+    let activeInvId = '';
+    if (targetInvestmentId) {
+      // Top up existing investment
+      const targetInvRef = doc(db!, 'users', uid, 'investments', targetInvestmentId);
+      const targetInvSnap = await transaction.get(targetInvRef);
+      if (!targetInvSnap.exists()) throw new Error('Target investment portfolio not found.');
+      
+      transaction.update(targetInvRef, {
+        amount: increment(bonusAmount),
+        updatedAt: serverTimestamp(),
+      });
+      activeInvId = targetInvestmentId;
+    } else {
+      // Create new investment portfolio (active immediately)
+      const newInvRef = doc(collection(db!, 'users', uid, 'investments'));
+      transaction.set(newInvRef, {
+        amount: bonusAmount,
+        status: 'active',
+        profitAvailable: 0,
+        profitTotal: 0,
+        depositAddress: 'Internal Reinvestment',
+        txHash: 'reinvestment',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      activeInvId = newInvRef.id;
+    }
+
+    // Add ledger entry
+    transaction.set(doc(collection(db!, 'ledgerEntries')), {
+      uid,
+      type: 'reinvestment',
+      amount: amount,
+      bonus: amount * 0.05,
+      status: 'completed',
+      refId: activeInvId,
+      refPath: `users/${uid}/investments/${activeInvId}`,
+      createdAt: serverTimestamp(),
+    });
+  });
+}
+
+export async function settleAndWithdrawProfit(
+  uid: string,
+  investmentId: string,
+  walletAddress: string,
+  speed: 'standard' | 'express',
+  fee: number
+) {
+  ensureDb();
+  if (!walletAddress.trim()) {
+    throw new Error('USDT BEP20 wallet address is required.');
+  }
+
+  await runTransaction(db!, async (transaction) => {
+    const userRef = doc(db!, 'users', uid);
+    const investmentRef = doc(db!, 'users', uid, 'investments', investmentId);
+    
+    const userSnap = await transaction.get(userRef);
+    const invSnap = await transaction.get(investmentRef);
+
+    if (!userSnap.exists()) throw new Error('User record not found.');
+    if (!invSnap.exists()) throw new Error('Investment record not found.');
+
+    const inv = invSnap.data();
+    if (inv.status !== 'active') {
+      throw new Error('Investment portfolio is not active.');
+    }
+
+    const availableProfit = Number(inv.profitAvailable || 0);
+    if (availableProfit < MIN_PROFIT_WITHDRAWAL) {
+      throw new Error('Minimum settlement profit is $50.00');
+    }
+
+    // Set investment status to pending_settlement
+    transaction.update(investmentRef, {
+      status: 'pending_settlement',
+      updatedAt: serverTimestamp(),
+    });
+
+    const withdrawalRef = doc(collection(db!, 'users', uid, 'withdrawals'));
+    transaction.set(withdrawalRef, {
+      amount: availableProfit,
+      walletAddress,
+      investmentId,
+      method: 'usdt_bep20',
+      type: 'settlement',
+      speed,
+      fee,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    transaction.set(doc(collection(db!, 'ledgerEntries')), {
+      uid,
+      type: 'settlement_requested',
+      amount: availableProfit,
+      status: 'pending',
+      refId: withdrawalRef.id,
+      refPath: `users/${uid}/withdrawals/${withdrawalRef.id}`,
+      metadata: { walletAddress, investmentId, speed, fee },
+      createdAt: serverTimestamp(),
+    });
+  });
+}
+
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>) {
   ensureDb();
@@ -451,7 +606,7 @@ export async function incrementUserTotals(uid: string, totals: Partial<NonNullab
 
 function ensureDb() {
   if (!db) {
-    throw new Error('Firestore is not configured. Add Firebase config values to .env.');
+    throw new Error('Database service is not configured. Please contact support.');
   }
 }
 

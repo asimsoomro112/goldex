@@ -19,10 +19,18 @@ import { CustomCursor } from './components/ui/CustomCursor';
 import { AuthProvider, useAuth } from './lib/auth';
 import { useDashboardData } from './lib/dashboardData';
 
+import { useSEO } from './hooks/useSEO';
+
+function RouterSEO() {
+  useSEO();
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <RouterSEO />
         <CustomCursor />
         <Toaster position="top-right" />
         <Routes>
@@ -88,27 +96,13 @@ function RequireAdmin() {
     return (
       <div className="min-h-screen bg-dark-900 text-text-primary flex items-center justify-center px-4">
         <div className="gc max-w-lg w-full p-8 bg-dark-950">
-          <h1 className="font-display text-2xl text-white mb-3">Admin access not enabled</h1>
+          <h1 className="font-display text-2xl text-white mb-3">Access Denied</h1>
           <p className="text-sm text-text-secondary leading-relaxed mb-6">
-            This account is logged in, but Firestore is not returning <span className="font-mono text-gold-500">role: admin</span> for it.
+            You do not have the required permissions to access the administrator panel. Please return to the user dashboard.
           </p>
-          <div className="space-y-3 text-sm">
-            <div className="rounded-lg bg-dark-900 border border-gold-500/10 p-3">
-              <p className="text-text-muted mb-1">UID</p>
-              <p className="font-mono text-xs text-white break-all">{user.uid}</p>
-            </div>
-            <div className="rounded-lg bg-dark-900 border border-gold-500/10 p-3">
-              <p className="text-text-muted mb-1">Email</p>
-              <p className="font-mono text-xs text-white break-all">{user.email || '-'}</p>
-            </div>
-            <div className="rounded-lg bg-dark-900 border border-gold-500/10 p-3">
-              <p className="text-text-muted mb-1">Current Firestore role</p>
-              <p className="font-mono text-xs text-white">{profile?.role || 'missing'}</p>
-            </div>
+          <div className="flex gap-4">
+            <Link to="/dashboard" className="btn-gold h-10 px-6 rounded-xl flex items-center justify-center text-sm font-medium">Return to Dashboard</Link>
           </div>
-          <p className="text-xs text-text-muted leading-relaxed mt-6">
-            In Firebase Console, open <span className="font-mono">users/{user.uid}</span> and set the field <span className="font-mono text-gold-500">role</span> to <span className="font-mono text-gold-500">admin</span>, then refresh this page.
-          </p>
         </div>
       </div>
     );

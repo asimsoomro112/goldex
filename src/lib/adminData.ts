@@ -11,6 +11,8 @@ import {
   runTransaction,
   serverTimestamp,
   writeBatch,
+  getDocs,
+  where,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Deposit, Investment, UserProfile, WalletRecord, Withdrawal, SupportTicket } from './dashboardData';
@@ -306,6 +308,7 @@ export async function markWithdrawalPaid(withdrawal: AdminRecord<Withdrawal>, ac
     const available = Number(userSnapshot.data()?.totals?.withdrawableProfit || 0);
     const currentStatus = withdrawalSnapshot.data()?.status;
     const investmentProfit = Number(investmentSnapshot?.data()?.profitAvailable || 0);
+    const isSettlement = withdrawalSnapshot.data()?.type === 'settlement';
 
     if (currentStatus !== 'pending') {
       throw new Error('Withdrawal is no longer pending.');
@@ -330,20 +333,33 @@ export async function markWithdrawalPaid(withdrawal: AdminRecord<Withdrawal>, ac
       updatedAt: serverTimestamp(),
     });
 
-    transaction.update(userRef, {
-      'totals.withdrawableProfit': increment(-amount),
-      updatedAt: serverTimestamp(),
-    });
-
-    transaction.update(investmentRef, {
-      profitAvailable: increment(-amount),
-      updatedAt: serverTimestamp(),
-    });
+    const principal = Number(investmentSnapshot.data().amount || 0);
+    if (isSettlement) {
+      transaction.update(userRef, {
+        'totals.withdrawableProfit': increment(-amount),
+        'totals.lockedPrincipal': increment(-principal), // Deduct full principal from user totals since package is settled
+        updatedAt: serverTimestamp(),
+      });
+      transaction.update(investmentRef, {
+        status: 'settled',
+        profitAvailable: increment(-amount),
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      transaction.update(userRef, {
+        'totals.withdrawableProfit': increment(-amount),
+        updatedAt: serverTimestamp(),
+      });
+      transaction.update(investmentRef, {
+        profitAvailable: increment(-amount),
+        updatedAt: serverTimestamp(),
+      });
+    }
 
     transaction.set(doc(collection(db!, 'adminAuditLogs')), {
       actorUid,
       targetUid: withdrawal.uid,
-      action: 'withdrawal_paid',
+      action: isSettlement ? 'settlement_paid' : 'withdrawal_paid',
       collection: 'withdrawals',
       recordId: withdrawal.id,
       investmentId: withdrawal.investmentId,
@@ -352,7 +368,7 @@ export async function markWithdrawalPaid(withdrawal: AdminRecord<Withdrawal>, ac
     });
     transaction.set(doc(collection(db!, 'ledgerEntries')), {
       uid: withdrawal.uid,
-      type: 'withdrawal_paid',
+      type: isSettlement ? 'settlement_paid' : 'withdrawal_paid',
       amount,
       status: 'paid',
       refId: withdrawal.id,
@@ -376,15 +392,26 @@ export async function rejectWithdrawal(withdrawal: AdminRecord<Withdrawal>, acto
       throw new Error('Withdrawal is no longer pending.');
     }
 
+    const isSettlement = withdrawalSnapshot.data().type === 'settlement';
+
     transaction.update(withdrawalRef, {
       status: 'rejected',
       rejectionReason: rejectionReason || null,
       updatedAt: serverTimestamp(),
     });
+
+    if (isSettlement && withdrawal.investmentId) {
+      const investmentRef = doc(db!, 'users', withdrawal.uid, 'investments', withdrawal.investmentId);
+      transaction.update(investmentRef, {
+        status: 'active',
+        updatedAt: serverTimestamp(),
+      });
+    }
+
     transaction.set(doc(collection(db!, 'adminAuditLogs')), {
       actorUid,
       targetUid: withdrawal.uid,
-      action: 'withdrawal_rejected',
+      action: isSettlement ? 'settlement_rejected' : 'withdrawal_rejected',
       collection: 'withdrawals',
       recordId: withdrawal.id,
       amount: Number(withdrawal.amount || 0),
@@ -393,7 +420,7 @@ export async function rejectWithdrawal(withdrawal: AdminRecord<Withdrawal>, acto
     });
     transaction.set(doc(collection(db!, 'ledgerEntries')), {
       uid: withdrawal.uid,
-      type: 'withdrawal_rejected',
+      type: isSettlement ? 'settlement_rejected' : 'withdrawal_rejected',
       amount: Number(withdrawal.amount || 0),
       status: 'rejected',
       refId: withdrawal.id,
@@ -487,9 +514,90 @@ export async function reviewApprovalRequest(request: AdminApprovalRequest, statu
 }
 
 
+export async function distributeGlobalProfit(ratePercent: number, actorUid: string) {
+  ensureDb();
+  if (!Number.isFinite(ratePercent) || ratePercent <= 0) {
+    throw new Error('Rate must be greater than zero.');
+  }
+
+  // Query all investments that are active using collectionGroup
+  const investmentsSnapshot = await getDocs(
+    query(collectionGroup(db!, 'investments'), where('status', '==', 'active'))
+  );
+  
+  const activeInvestments = investmentsSnapshot.docs.map(d => {
+    const parentPath = d.ref.parent.parent;
+    if (!parentPath) throw new Error('Parent user path not found');
+    return {
+      id: d.id,
+      uid: parentPath.id,
+      ...d.data()
+    } as AdminRecord<Investment>;
+  });
+
+  if (activeInvestments.length === 0) {
+    throw new Error('No active investments found to distribute profit.');
+  }
+
+  // Split into chunks of 100 for Firestore batch size limits (safety margin)
+  const chunkSize = 100;
+  for (let i = 0; i < activeInvestments.length; i += chunkSize) {
+    const chunk = activeInvestments.slice(i, i + chunkSize);
+    const batch = writeBatch(db!);
+
+    for (const inv of chunk) {
+      const profit = Number((Number(inv.amount || 0) * (ratePercent / 100)).toFixed(2));
+      if (profit <= 0) continue;
+
+      const userRef = doc(db!, 'users', inv.uid);
+      const investmentRef = doc(db!, 'users', inv.uid, 'investments', inv.id);
+
+      batch.update(investmentRef, {
+        profitAvailable: increment(profit),
+        profitTotal: increment(profit),
+        updatedAt: serverTimestamp(),
+      });
+
+      batch.update(userRef, {
+        'totals.todayProfit': increment(profit),
+        'totals.totalEarned': increment(profit),
+        'totals.withdrawableProfit': increment(profit),
+        updatedAt: serverTimestamp(),
+      });
+
+      // Audit logs
+      const auditLogRef = doc(collection(db!, 'adminAuditLogs'));
+      batch.set(auditLogRef, {
+        actorUid,
+        targetUid: inv.uid,
+        action: 'global_profit_distribute',
+        collection: 'investments',
+        recordId: inv.id,
+        amount: profit,
+        ratePercent,
+        createdAt: serverTimestamp(),
+      });
+
+      // Ledger entries
+      const ledgerRef = doc(collection(db!, 'ledgerEntries'));
+      batch.set(ledgerRef, {
+        uid: inv.uid,
+        type: 'profit_added',
+        amount: profit,
+        status: 'credited',
+        refId: inv.id,
+        refPath: `users/${inv.uid}/investments/${inv.id}`,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
+  }
+}
+
 function ensureDb() {
   if (!db) {
-    throw new Error('Firestore is not configured.');
+    throw new Error('Database service is not configured.');
   }
 }
 

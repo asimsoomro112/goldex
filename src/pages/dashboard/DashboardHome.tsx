@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
-import { MIN_PROFIT_WITHDRAWAL, useDashboardData } from '@/lib/dashboardData';
+import { MIN_PROFIT_WITHDRAWAL, useDashboardData, useLedgerEntries } from '@/lib/dashboardData';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 export function DashboardHome() {
   const [chartPeriod, setChartPeriod] = useState('7D');
@@ -13,7 +14,43 @@ export function DashboardHome() {
   const [goldPrice, setGoldPrice] = useState<{ price: number | null; source: string; updatedAt: string } | null>(null);
   const { user } = useAuth();
   const { investments, totals, loading } = useDashboardData(user?.uid);
+  const { entries: ledgerEntries } = useLedgerEntries(user?.uid, 100);
   const hasLiveData = investments.length > 0;
+
+  // Compute profit history data
+  const profitEntries = ledgerEntries.filter(entry => entry.type === 'profit_added');
+  
+  let runningSum = 0;
+  const sortedRawData = [...profitEntries]
+    .reverse()
+    .map(entry => {
+      const date = entry.createdAt?.toDate 
+        ? entry.createdAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        : '-';
+      return { date, amount: entry.amount || 0 };
+    });
+
+  const accumulatedDataMap: Record<string, number> = {};
+  sortedRawData.forEach(item => {
+    runningSum += item.amount;
+    accumulatedDataMap[item.date] = runningSum;
+  });
+
+  const chartData = Object.entries(accumulatedDataMap).map(([date, profit]) => ({
+    date,
+    profit: parseFloat(profit.toFixed(2))
+  }));
+
+  const getFilteredChartData = () => {
+    if (chartData.length === 0) return [];
+    let limit = 7;
+    if (chartPeriod === '30D') limit = 30;
+    else if (chartPeriod === '90D') limit = 90;
+    else if (chartPeriod === 'ALL') return chartData;
+    return chartData.slice(-limit);
+  };
+
+  const filteredChartData = getFilteredChartData();
 
   useEffect(() => {
     const fetchPrice = () => {
@@ -28,9 +65,8 @@ export function DashboardHome() {
     return () => clearInterval(interval);
   }, []);
 
-  // TradingView Widget Script Loader
+  // TradingView Widget Script Loader - runs once on mount to keep widget persistent in hidden container
   useEffect(() => {
-    if (activeChartTab !== 'live-chart') return;
 
     let tvWidget: any = null;
     const containerId = "tradingview_gold_chart";
@@ -214,22 +250,86 @@ export function DashboardHome() {
                  )}
                </div>
                
-               {activeChartTab === 'live-chart' ? (
-                 <div className="h-[280px] sm:h-[360px] w-full rounded-xl overflow-hidden border border-gold-500/10 bg-dark-950/60 relative">
-                   <div id="tradingview_gold_chart" className="w-full h-full" />
-                 </div>
-               ) : (
-                 <div className="h-[280px] sm:h-[360px] w-full">
-                   <div className="h-full rounded-xl border border-gold-500/10 bg-dark-900/40 flex flex-col items-center justify-center text-center px-6 overflow-hidden relative">
-                     {!hasLiveData && (
-                        <div className="flex flex-col items-center justify-center gap-2 mb-4 relative z-10">
-                          <img src="/images/Empty Transactions.png" alt="" className="w-24 h-24 object-contain opacity-75 drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
-                        </div>
-                      )}
-                     <p className="text-sm text-text-muted relative z-10">{loading ? 'Loading live data...' : 'Profit starts after a verified $50-multiple investment. Withdrawal unlocks when profit reaches $50.'}</p>
-                   </div>
-                 </div>
-               )}
+               {/* Live TradingView Gold Chart (shown/hidden via class) */}
+                <div 
+                  className={cn(
+                    "h-[280px] sm:h-[360px] w-full rounded-xl overflow-hidden border border-gold-500/10 bg-dark-950/60 relative",
+                    activeChartTab !== 'live-chart' && "hidden"
+                  )}
+                >
+                  <div id="tradingview_gold_chart" className="w-full h-full" />
+                </div>
+
+                {/* Profit History Cumulative Chart (shown/hidden via class) */}
+                <div 
+                  className={cn(
+                    "h-[280px] sm:h-[360px] w-full",
+                    activeChartTab !== 'profit-history' && "hidden"
+                  )}
+                >
+                  {filteredChartData.length === 0 ? (
+                    <div className="h-full rounded-xl border border-gold-500/10 bg-dark-900/40 flex flex-col items-center justify-center text-center px-6 overflow-hidden relative">
+                      <div className="flex flex-col items-center justify-center gap-2 mb-4 relative z-10">
+                        <img src="/images/Empty Transactions.png" alt="" className="w-24 h-24 object-contain opacity-75 drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
+                      </div>
+                      <p className="text-sm text-text-muted relative z-10">
+                        {loading ? 'Loading live data...' : 'Profit starts after a verified $50-multiple investment. Withdrawal unlocks when profit reaches $50.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="h-full w-full rounded-xl border border-gold-500/10 bg-dark-950/40 p-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={filteredChartData}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="profitGlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(212, 175, 55, 0.05)" vertical={false} />
+                          <XAxis 
+                            dataKey="date" 
+                            stroke="rgba(232, 228, 212, 0.4)" 
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            stroke="rgba(232, 228, 212, 0.4)" 
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => `$${v}`}
+                          />
+                          <Tooltip 
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-dark-950/95 border border-gold-500/30 rounded-lg p-3 shadow-xl backdrop-blur-md">
+                                    <p className="text-[10px] uppercase text-[#E8E4D4]/45 tracking-wider font-sans mb-1">{payload[0].payload.date}</p>
+                                    <p className="font-mono text-sm font-bold text-gold-500">${payload[0].value.toFixed(2)}</p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="profit" 
+                            stroke="#D4AF37" 
+                            strokeWidth={2}
+                            fillOpacity={1} 
+                            fill="url(#profitGlow)" 
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
             </div>
 
             {/* Active Investments */}

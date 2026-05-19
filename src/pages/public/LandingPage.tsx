@@ -1767,10 +1767,8 @@ export function LandingPage() {
                   style={{ marginBottom: 24 }}
                 >
                   <h1 className="lp-hero-title" style={{ color: '#F7F3E8', display: 'block', marginBottom: 4 }}>
-                    Trade Gold.
-                  </h1>
-                  <h1 className={`lp-hero-title lp-gold-text`} style={{ display: 'block' }}>
-                    Use Live Data.
+                    Trade Gold.<br />
+                    <span className="lp-gold-text">Use Live Data.</span>
                   </h1>
                 </motion.div>
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GoldButton } from '@/components/ui/GoldButton';
-import { CircleDollarSign, ArrowRight, Wallet, History, Download, Copy } from 'lucide-react';
+import { CircleDollarSign, ArrowRight, Wallet, History, Download, Copy, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
@@ -12,6 +12,8 @@ import {
   USDT_BEP20_ADDRESS,
   createDepositRequest,
   useDashboardData,
+  settleAndWithdrawProfit,
+  useWalletWhitelist,
 } from '@/lib/dashboardData';
 
 const INVESTMENT_AMOUNTS = [50, 100, 150, 200, 250, 500, 1000];
@@ -30,6 +32,13 @@ export function InvestPage() {
 
   const { user } = useAuth();
   const { investments, deposits } = useDashboardData(user?.uid);
+  const { wallets } = useWalletWhitelist(user?.uid);
+  const approvedWallets = wallets.filter((w) => w.status === 'approved');
+
+  const [settlingInvestment, setSettlingInvestment] = useState<any>(null);
+  const [settleWalletAddress, setSettleWalletAddress] = useState('');
+  const [settleSpeed, setSettleSpeed] = useState<'standard' | 'express'>('standard');
+  const [settlingSubmit, setSettlingSubmit] = useState(false);
 
   const numericAmount = parseFloat(amount) || 0;
   const isInvalid = numericAmount < MIN_INVESTMENT || numericAmount % MIN_INVESTMENT !== 0;
@@ -393,16 +402,33 @@ export function InvestPage() {
                         <th className="px-6 py-4 font-medium">Rate</th>
                         <th className="px-6 py-4 font-medium">Daily Profit</th>
                         <th className="px-6 py-4 font-medium">Status</th>
+                        <th className="px-6 py-4 font-medium text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {investments.map((investment) => (
                         <tr key={investment.id} className="border-b border-gold-500/5 hover:bg-[#11111F]/50 transition-colors">
-                          <td className="px-6 py-4 font-medium font-sans text-white">{investment.amount >= 5000 ? 'Elite' : investment.amount >= 500 ? 'Growth' : 'Starter'}</td>
+                          <td className="px-6 py-4 font-medium font-sans text-white">
+                            {investment.amount >= 5000 ? 'Elite' : investment.amount >= 500 ? 'Growth' : 'Starter'}
+                          </td>
                           <td className="px-6 py-4 font-mono text-gold-500">${Number(investment.amount || 0).toFixed(2)}</td>
                           <td className="px-6 py-4 font-mono text-[#E8E4D4]/60">0.5% - 1%</td>
                           <td className="px-6 py-4 font-mono text-profit-green">${Number(investment.profitAvailable || 0).toFixed(2)}</td>
-                          <td className="px-6 py-4"><span className="badge badge-gold">{investment.status.replace(/_/g, ' ')}</span></td>
+                          <td className="px-6 py-4">
+                            <span className="badge badge-gold">{investment.status.replace(/_/g, ' ')}</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {investment.status === 'active' ? (
+                              <button
+                                onClick={() => setSettlingInvestment(investment)}
+                                className="btn-ghost h-8 px-3 text-xs rounded-lg border border-gold-500/20 hover:bg-gold-500/5 text-gold-500 transition-colors"
+                              >
+                                Settle
+                              </button>
+                            ) : (
+                              <span className="text-xs text-text-muted">No actions</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -510,6 +536,138 @@ export function InvestPage() {
           </GlassCard>
         </div>
       </div>
+
+      {settlingInvestment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="gc max-w-md w-full p-6 space-y-6 border-gold-500/25 bg-dark-950 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative">
+            <h3 className="text-lg font-medium text-white flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-gold-500" />
+              Settle Investment Portfolio
+            </h3>
+            
+            <p className="text-xs text-text-muted leading-relaxed">
+              Settle this portfolio to stop yield generation and withdraw its accumulated profit. 
+              <span className="text-gold-500 font-semibold block mt-1">
+                Note: The principal investment of ${Number(settlingInvestment.amount).toFixed(2)} is non-refundable and will remain active/consumed by the platform. Only the profit will be sent.
+              </span>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-text-secondary block mb-1">Select Approved Wallet</label>
+                <select
+                  value={settleWalletAddress}
+                  onChange={(e) => setSettleWalletAddress(e.target.value)}
+                  className="input-gold text-xs"
+                  required
+                >
+                  <option value="">Select approved BEP20 wallet</option>
+                  {approvedWallets.map((wallet) => (
+                    <option key={wallet.id} value={wallet.address}>
+                      {wallet.label || 'BEP20 Wallet'} - {wallet.address.slice(0, 12)}...
+                    </option>
+                  ))}
+                </select>
+                {approvedWallets.length === 0 && (
+                  <p className="text-[10px] text-danger mt-1">Please approve a wallet in settings first.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs text-text-secondary block mb-1.5">Select Settlement Speed</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettleSpeed('standard')}
+                    className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all ${
+                      settleSpeed === 'standard'
+                        ? 'border-gold-500 bg-gold-500/10 text-gold-500'
+                        : 'border-gold-500/10 bg-dark-900/40 text-text-secondary'
+                    }`}
+                  >
+                    <span className="text-xs font-semibold">Standard</span>
+                    <span className="text-[9px] text-text-muted mt-1">24-48 Hours (8% Fee)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSettleSpeed('express')}
+                    className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all ${
+                      settleSpeed === 'express'
+                        ? 'border-gold-500 bg-gold-500/10 text-gold-500'
+                        : 'border-gold-500/10 bg-dark-900/40 text-text-secondary'
+                    }`}
+                  >
+                    <span className="text-xs font-semibold">Express</span>
+                    <span className="text-[9px] text-text-muted mt-1">Under 1 Hour (12% Fee)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Calculations */}
+              <div className="bg-dark-900/50 border border-gold-500/10 rounded-xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Accumulated Profit</span>
+                  <span className="font-mono text-white">${Number(settlingInvestment.profitAvailable).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Processing Fee ({settleSpeed === 'express' ? '12%' : '8%'})</span>
+                  <span className="font-mono text-danger">
+                    -${(Number(settlingInvestment.profitAvailable) * (settleSpeed === 'express' ? 0.12 : 0.08)).toFixed(2)}
+                  </span>
+                </div>
+                <hr className="border-gold-500/10 my-1" />
+                <div className="flex justify-between text-sm font-semibold">
+                  <span className="text-gold-500">Net Return</span>
+                  <span className="font-mono text-gold-500">
+                    -${(
+                      Number(settlingInvestment.profitAvailable) -
+                      Number(settlingInvestment.profitAvailable) * (settleSpeed === 'express' ? 0.12 : 0.08)
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setSettlingInvestment(null)}
+                className="btn-ghost flex-1 h-10 text-xs border border-gold-500/20 text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={settlingSubmit || !settleWalletAddress || Number(settlingInvestment.profitAvailable) < 50}
+                onClick={async () => {
+                  if (!user || !settlingInvestment) return;
+                  setSettlingSubmit(true);
+                  try {
+                    const profit = Number(settlingInvestment.profitAvailable);
+                    const fee = profit * (settleSpeed === 'express' ? 0.12 : 0.08);
+                    await settleAndWithdrawProfit(
+                      user.uid,
+                      settlingInvestment.id,
+                      settleWalletAddress,
+                      settleSpeed,
+                      fee
+                    );
+                    toast.success('Settlement request submitted successfully!');
+                    setSettlingInvestment(null);
+                  } catch (err: any) {
+                    toast.error(err.message || 'Settlement failed.');
+                  } finally {
+                    setSettlingSubmit(false);
+                  }
+                }}
+                className="btn-gold flex-1 h-10 text-xs font-semibold"
+              >
+                {settlingSubmit ? 'Submitting...' : 'Confirm Settle'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
