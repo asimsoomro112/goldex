@@ -456,9 +456,9 @@ export function SettingsPage() {
               
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-xl font-medium text-white mb-2">AI-Powered KYC Verification</h2>
+                  <h2 className="text-xl font-medium text-white mb-2">Identity Verification (KYC)</h2>
                   <p className="text-sm text-text-secondary max-w-md">
-                    Upload your document to instantly verify your identity using Gemini 2.5 Flash AI and Cloudinary.
+                    Upload your document to verify your identity. Your details are securely encrypted and processed.
                   </p>
                 </div>
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider ${
@@ -468,28 +468,68 @@ export function SettingsPage() {
                     ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                     : 'bg-gold-500/10 text-gold-500 border border-gold-500/20'
                 }`}>
-                  <FileCheck className="w-4 h-4" /> {profile?.kycStatus || 'not_started'}
+                  <FileCheck className="w-4 h-4" /> {profile?.kycStatus === 'verified' ? 'Verified' : profile?.kycStatus === 'pending' ? 'Pending' : 'Not Started'}
                 </span>
               </div>
 
               {profile?.kycStatus === 'verified' ? (
-                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-6 max-w-xl text-center flex flex-col items-center gap-3">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-                  <h3 className="text-white font-medium text-lg">Verification Successful</h3>
-                  <p className="text-text-muted text-xs leading-relaxed max-w-sm">
-                    Your KYC document has been processed and verified by Gemini AI. Your profile details have been successfully synced and your account is fully compliant.
-                  </p>
-                  <div className="flex gap-4 mt-2">
-                    {profile.kycDocumentUrl && (
-                      <a href={profile.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-xs text-gold-500 hover:underline">
-                        View Front Side
-                      </a>
-                    )}
-                    {profile.kycBackDocumentUrl && (
-                      <a href={profile.kycBackDocumentUrl} target="_blank" rel="noreferrer" className="text-xs text-gold-500 hover:underline">
-                        View Back Side
-                      </a>
-                    )}
+                <div className="bg-emerald-950/10 border border-emerald-500/25 rounded-2xl p-6 max-w-xl space-y-6">
+                  <div className="flex items-center gap-4 border-b border-emerald-500/20 pb-4">
+                    <div className="p-3 bg-emerald-500/10 rounded-full">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                        Verification Complete
+                      </h3>
+                      <p className="text-emerald-400 text-xs font-medium">Your identity has been verified successfully.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    <h4 className="text-[10px] text-text-muted uppercase tracking-wider font-semibold">Verified Details</h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-xs">
+                      <div>
+                        <span className="text-text-muted block mb-0.5">Legal Name</span>
+                        <span className="text-white font-medium">{profile?.kycLegalName || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-text-muted block mb-0.5">Country / Region</span>
+                        <span className="text-white font-medium">{profile?.kycCountry || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-text-muted block mb-0.5">Document Type</span>
+                        <span className="text-white font-medium uppercase">
+                          {profile?.kycDocumentType === 'passport' 
+                            ? 'Passport' 
+                            : profile?.kycDocumentType === 'driver_license' 
+                            ? "Driver's License" 
+                            : profile?.kycDocumentType === 'national_id' 
+                            ? 'National ID' 
+                            : profile?.kycDocumentType || '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-text-muted block mb-0.5">Document Number</span>
+                        <span className="text-white font-medium font-mono">
+                          {profile?.kycDocumentNumber 
+                            ? `${profile.kycDocumentNumber.slice(0, 4)}****${profile.kycDocumentNumber.slice(-4)}`
+                            : '-'}
+                        </span>
+                      </div>
+                      {profile?.kycDob && (
+                        <div>
+                          <span className="text-text-muted block mb-0.5">Date of Birth</span>
+                          <span className="text-white font-medium">{profile.kycDob}</span>
+                        </div>
+                      )}
+                      {profile?.kycExpiryDate && (
+                        <div>
+                          <span className="text-text-muted block mb-0.5">Expiration Date</span>
+                          <span className="text-white font-medium">{profile.kycExpiryDate}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : uploadingDoc || analyzingDoc ? (
@@ -497,12 +537,10 @@ export function SettingsPage() {
                   <Loader2 className="w-10 h-10 text-gold-500 animate-spin" />
                   <div>
                     <h3 className="text-white font-medium text-base mb-1">
-                      {uploadingDoc ? 'Processing Document...' : 'Gemini AI Analyzing (Front + Back)...'}
+                      System is verifying...
                     </h3>
                     <p className="text-text-muted text-xs max-w-xs leading-relaxed">
-                      {uploadingDoc
-                        ? 'Uploading document to secure storage. Cloudinary is used with automatic local compressed fallback if needed.'
-                        : 'Gemini 2.5 Flash is analyzing both front and back images to extract name, ID number, country, dates, and verifying authenticity.'}
+                      Please wait while our system securely processes and validates your identity document.
                     </p>
                   </div>
                 </div>
@@ -602,26 +640,26 @@ export function SettingsPage() {
                       }
                       className="w-full h-11"
                     >
-                      Verify Document with Gemini AI
+                      Verify Document
                     </GoldButton>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleKycSubmit} className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-4 max-w-xl">
                   <div className="p-3 bg-gold-500/5 border border-gold-500/10 rounded-xl flex items-center justify-between">
-                    <span className="text-xs text-text-secondary">AI Verification Verdict:</span>
+                    <span className="text-xs text-text-secondary">Verification Scan Result:</span>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       kycForm.verified
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     }`}>
-                      {kycForm.verified ? 'AI Verified (Pass)' : 'AI Flagged (Review Required)'}
+                      {kycForm.verified ? 'System Verified' : 'Under Review'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Legal Name (Extracted)</label>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Legal Name</label>
                       <input
                         value={kycForm.legalName}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, legalName: event.target.value }))}
