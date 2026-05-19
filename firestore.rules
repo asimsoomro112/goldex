@@ -243,12 +243,18 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
 
       allow update: if isOwner(userId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["displayName", "photoURL", "phone", "notificationPrefs", "kycStatus", "kycSubmittedAt", "kycNotes", "accountStatus", "deletionRequestedAt", "updatedAt"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "displayName", "photoURL", "phone", "notificationPrefs", 
+          "kycStatus", "kycSubmittedAt", "kycReviewedAt", "kycNotes", 
+          "kycLegalName", "kycCountry", "kycDocumentType", "kycDocumentNumber", 
+          "kycDob", "kycExpiryDate", "kycDocumentUrl", "kycBackDocumentUrl",
+          "accountStatus", "deletionRequestedAt", "updatedAt"
+        ])
         && request.resource.data.role == resource.data.role
         && request.resource.data.totals == resource.data.totals
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(["kycStatus"])
-          || request.resource.data.kycStatus in ["not_started", "pending"]
+          || request.resource.data.kycStatus in ["not_started", "pending", "verified"]
         )
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(["accountStatus"])
