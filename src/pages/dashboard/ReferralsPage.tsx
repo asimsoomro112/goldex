@@ -3,12 +3,13 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Users, CheckCircle2, Clock, Copy, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
-import { useDashboardData, useReferredUsers } from '@/lib/dashboardData';
+import { useDashboardData, useReferredUsers, useLedgerEntries } from '@/lib/dashboardData';
 
 export function ReferralsPage() {
   const { user } = useAuth();
   const { profile } = useDashboardData(user?.uid);
   const { referredUsers, loading: referralsLoading } = useReferredUsers(profile?.referralCode);
+  const { entries: ledgerEntries } = useLedgerEntries(user?.uid, 1000);
 
   const referralCode = profile?.referralCode || (user?.uid ? `GX${user.uid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}` : '');
   const referralLink = `${window.location.origin}/register?ref=${referralCode}`;
@@ -28,7 +29,20 @@ export function ReferralsPage() {
 
   const myRefereePaidBonus = (profile?.referredBy && profile?.referralStatus === 'completed') ? (profile.refereeBonusPaid || 5) : 0;
   const inviteesPaidCommission = referredUsers.reduce((sum, u) => sum + (u.referralCommissionPaid || 0), 0);
-  const totalPaidBonuses = myRefereePaidBonus + inviteesPaidCommission;
+  
+  const referralPaidCommissionLedger = ledgerEntries.length > 0 
+    ? ledgerEntries
+        .filter(entry => entry.type === 'referral_commission' || entry.type === 'referral_profit_commission')
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+    : inviteesPaidCommission;
+
+  const refereePaidBonusLedger = ledgerEntries.length > 0
+    ? ledgerEntries
+        .filter(entry => entry.type === 'referee_bonus')
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+    : myRefereePaidBonus;
+
+  const totalPaidBonuses = referralPaidCommissionLedger + refereePaidBonusLedger;
 
   const maskEmail = (email?: string) => {
     if (!email) return '-';
@@ -57,7 +71,7 @@ export function ReferralsPage() {
         <div className="flex-1 relative z-10">
           <h1 className="text-3xl font-display font-medium text-white mb-2">Referral Center</h1>
           <p className="text-text-secondary mb-6 max-w-md">
-            Invite your partners to join GoldEx. Earn <span className="text-gold-500 font-semibold">$10.00 profit commission</span> for every $50.00 they invest on their <span className="text-gold-500 font-semibold">first investment only</span>, while they receive a <span className="text-gold-500 font-semibold">$5.00 startup bonus</span>!
+            Invite your partners to join GoldEx. Earn a <span className="text-gold-500 font-semibold">one-time $10.00 commission</span> per $50.00 of their first investment, plus a recurring <span className="text-gold-500 font-semibold">10% profit-sharing commission</span> on all daily profits they earn!
           </p>
 
           <label className="text-xs text-text-muted uppercase tracking-wider mb-2 block font-medium">Your Unique Referral Link</label>
@@ -101,7 +115,11 @@ export function ReferralsPage() {
       <div className="flex items-start gap-4 p-5 rounded-2xl border border-gold-500/10 bg-dark-900/40 text-sm text-text-secondary leading-relaxed">
         <AlertCircle className="w-5 h-5 text-gold-500 shrink-0 mt-0.5" />
         <div>
-          <span className="text-white font-medium">How it works:</span> When a referred user completes their <span className="text-white font-medium">first deposit and investment</span> (minimum $50.00), our system automatically detects it. You are credited with a <span className="text-white font-medium">one-time commission</span> of $10.00 for every $50.00 of their initial investment (e.g. $10.00 for a $50.00 investment, $20.00 for a $100.00 investment). Their pending welcome signup bonus ($5.00 per $50.00 of that first investment) is also released and credited. Any subsequent investments by this user will not earn further referral bonuses.
+          <span className="text-white font-medium">How it works:</span> 
+          <ul className="list-disc pl-5 mt-2 space-y-1.5">
+            <li><span className="text-white font-medium">One-Time Sign-up & Deposit Payout:</span> When a referred user completes their first deposit & investment (minimum $50.00), you earn a one-time commission of $10.00 per $50.00 of their initial investment, and they receive a welcome bonus of $5.00 per $50.00. Subsequent investments do not trigger this bonus.</li>
+            <li><span className="text-white font-medium">10% Daily Profit Share:</span> Every time your referred partners receive profit distributions on their active investments, you automatically receive a matching 10% profit commission credited directly to your withdrawable profit balance.</li>
+          </ul>
         </div>
       </div>
 

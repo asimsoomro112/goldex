@@ -605,7 +605,7 @@ export async function reviewApprovalRequest(request: AdminApprovalRequest, statu
 export async function distributeGlobalProfit(ratePercent: number, actorUid: string) {
   ensureDb();
   if (!Number.isFinite(ratePercent) || ratePercent <= 0) {
-    throw new Error('Rate must be greater than zero.');
+    throw new Error('Rate percentage must be a positive number.');
   }
 
   // Query all investments that are active using collectionGroup
@@ -626,6 +626,26 @@ export async function distributeGlobalProfit(ratePercent: number, actorUid: stri
   if (activeInvestments.length === 0) {
     throw new Error('No active investments found to distribute profit.');
   }
+
+  // Pre-load all users to build referral maps in memory
+  const usersSnapshot = await getDocs(collection(db!, 'users'));
+  const userReferredByMap = new Map<string, string>(); // B.uid -> A.referralCode
+  const referralCodeToUidMap = new Map<string, string>(); // A.referralCode -> A.uid
+  const userDisplayNameMap = new Map<string, string>(); // uid -> displayName
+  
+  usersSnapshot.forEach(d => {
+    const data = d.data();
+    const uid = d.id;
+    if (data.referredBy) {
+      userReferredByMap.set(uid, data.referredBy);
+    }
+    if (data.referralCode) {
+      referralCodeToUidMap.set(data.referralCode, uid);
+    }
+    if (data.displayName) {
+      userDisplayNameMap.set(uid, data.displayName);
+    }
+  });
 
   // Split into chunks of 100 for Firestore batch size limits (safety margin)
   const chunkSize = 100;
@@ -652,6 +672,48 @@ export async function distributeGlobalProfit(ratePercent: number, actorUid: stri
         'totals.withdrawableProfit': increment(profit),
         updatedAt: serverTimestamp(),
       });
+
+      // Process 10% referral profit sharing commission
+      const referrerCode = userReferredByMap.get(inv.uid);
+      if (referrerCode) {
+        const referrerUid = referralCodeToUidMap.get(referrerCode);
+        if (referrerUid) {
+          const refCommission = Number((profit * 0.10).toFixed(2));
+          if (refCommission > 0) {
+            const referrerRef = doc(db!, 'users', referrerUid);
+            batch.update(referrerRef, {
+              'totals.withdrawableProfit': increment(refCommission),
+              'totals.totalEarned': increment(refCommission),
+              updatedAt: serverTimestamp(),
+            });
+
+            // Ledger entry for referrer
+            const referrerLedgerRef = doc(collection(db!, 'ledgerEntries'));
+            batch.set(referrerLedgerRef, {
+              uid: referrerUid,
+              type: 'referral_profit_commission',
+              amount: refCommission,
+              status: 'credited',
+              refId: inv.id,
+              refPath: `users/${inv.uid}/investments/${inv.id}`,
+              description: `10% referral profit commission from ${userDisplayNameMap.get(inv.uid) || 'referred partner'}'s profit allocation`,
+              createdAt: serverTimestamp(),
+            });
+
+            // Audit log for the commission payout
+            const referrerAuditRef = doc(collection(db!, 'adminAuditLogs'));
+            batch.set(referrerAuditRef, {
+              actorUid,
+              targetUid: referrerUid,
+              action: 'referral_profit_commission_paid',
+              collection: 'users',
+              recordId: inv.uid,
+              amount: refCommission,
+              createdAt: serverTimestamp(),
+            });
+          }
+        }
+      }
 
       // Audit logs
       const auditLogRef = doc(collection(db!, 'adminAuditLogs'));
