@@ -23,7 +23,18 @@ export async function uploadToCloudinary(file: File, folder = 'goldex') {
   });
 
   if (!response.ok) {
-    throw new Error('Cloudinary upload failed.');
+    const errorText = await response.text();
+    console.error('Cloudinary upload failure response:', errorText);
+    let message = 'Cloudinary upload failed';
+    try {
+      const parsed = JSON.parse(errorText);
+      if (parsed.error && parsed.error.message) {
+        message += `: ${parsed.error.message}`;
+      }
+    } catch {
+      message += `: ${errorText}`;
+    }
+    throw new Error(message);
   }
 
   return response.json() as Promise<{ secure_url: string; public_id: string }>;

@@ -413,11 +413,18 @@ export function AdminPage() {
                   <div><span className="text-text-muted">Doc:</span> {account.kycDocumentType?.toUpperCase()} ({account.kycDocumentNumber || '-'})</div>
                   <div><span className="text-text-muted">Country:</span> {account.kycCountry || '-'}</div>
                 </td>
-                <td className="px-4 py-3 text-xs">
+                <td className="px-4 py-3 text-xs space-y-1">
                   {account.kycDocumentUrl ? (
-                    <a href={account.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-gold-500 hover:underline">
-                      View Document
-                    </a>
+                    <div className="flex flex-col gap-1">
+                      <a href={account.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-gold-500 hover:underline">
+                        Front Side ↗
+                      </a>
+                      {account.kycBackDocumentUrl && (
+                        <a href={account.kycBackDocumentUrl} target="_blank" rel="noreferrer" className="text-gold-500 hover:underline">
+                          Back Side ↗
+                        </a>
+                      )}
+                    </div>
                   ) : 'No Doc'}
                 </td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{account.kycStatus}</span></td>

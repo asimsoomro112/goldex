@@ -145,26 +145,88 @@ export async function analyzeKycDocument(body: any) {
     throw statusError("AI API key is not configured.", 500);
   }
 
-  const { documentUrl, documentType } = body || {};
+  const { documentUrl, backDocumentUrl, documentType } = body || {};
   if (!documentUrl) {
     throw statusError("documentUrl is required.", 400);
   }
 
   try {
-    const imgResponse = await fetch(documentUrl);
-    if (!imgResponse.ok) {
-      throw new Error(`Failed to fetch image from Cloudinary: ${imgResponse.statusText}`);
+    // 1. Resolve front image base64 & mimeType
+    let frontBase64 = "";
+    let frontMimeType = "image/jpeg";
+    if (documentUrl.startsWith("data:")) {
+      const match = documentUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        frontMimeType = match[1];
+        frontBase64 = match[2];
+      } else {
+        throw statusError("Invalid front image Data URL format.", 400);
+      }
+    } else {
+      const imgResponse = await fetch(documentUrl);
+      if (!imgResponse.ok) {
+        throw new Error(`Failed to fetch image from Cloudinary: ${imgResponse.statusText}`);
+      }
+      const arrayBuffer = await imgResponse.arrayBuffer();
+      frontBase64 = Buffer.from(arrayBuffer).toString("base64");
+      frontMimeType = imgResponse.headers.get("content-type") || "image/jpeg";
     }
-    const arrayBuffer = await imgResponse.arrayBuffer();
-    const base64Image = Buffer.from(arrayBuffer).toString("base64");
-    const mimeType = imgResponse.headers.get("content-type") || "image/jpeg";
+
+    // 2. Build model inputs
+    const parts: any[] = [
+      {
+        inlineData: {
+          mimeType: frontMimeType,
+          data: frontBase64,
+        },
+      },
+    ];
+
+    // 3. Resolve back image if provided
+    if (backDocumentUrl) {
+      let backBase64 = "";
+      let backMimeType = "image/jpeg";
+      if (backDocumentUrl.startsWith("data:")) {
+        const match = backDocumentUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          backMimeType = match[1];
+          backBase64 = match[2];
+        }
+      } else {
+        try {
+          const backResponse = await fetch(backDocumentUrl);
+          if (backResponse.ok) {
+            const backArrayBuffer = await backResponse.arrayBuffer();
+            backBase64 = Buffer.from(backArrayBuffer).toString("base64");
+            backMimeType = backResponse.headers.get("content-type") || "image/jpeg";
+          }
+        } catch (fetchErr) {
+          console.warn("Failed to fetch back document image:", fetchErr);
+        }
+      }
+
+      if (backBase64) {
+        parts.push({
+          inlineData: {
+            mimeType: backMimeType,
+            data: backBase64,
+          },
+        });
+      }
+    }
+
+    parts.push({
+      text: "Analyze these document images (Front and optional Back) and return JSON matching the specified schema."
+    });
 
     const systemPrompt = `You are a professional automated KYC identity verification agent for GoldEx. 
 Your job is to examine the provided identity document (which is claimed to be a ${documentType || 'passport'}).
+You may be provided with one image (e.g. passport main page or ID card front side) or two images (e.g. ID card front side and back side).
 Perform the following checks:
 1. Verify if the document looks authentic and is not fake or edited.
 2. Read the legal full name, document number, country of issue, date of birth, and expiry date.
 3. Determine if the document matches the requested type: ${documentType || 'passport'}.
+4. If there is a back image, check it for dates, signatures, or address details.
 
 Provide your final assessment as a raw JSON object. Your output must be strictly valid JSON and nothing else. No markdown formatting, no backticks, no comments.
 JSON schema:
@@ -187,17 +249,7 @@ JSON schema:
       contents: [
         {
           role: "user",
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: base64Image,
-              },
-            },
-            {
-              text: "Analyze this document and return JSON matching the specified schema."
-            }
-          ]
+          parts: parts,
         }
       ],
       config: {

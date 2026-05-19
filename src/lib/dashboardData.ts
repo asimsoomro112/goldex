@@ -453,6 +453,7 @@ export async function submitKycRequest(
     dob: string;
     expiryDate: string;
     documentUrl: string;
+    backDocumentUrl?: string;
     status: 'verified' | 'pending' | 'rejected';
     notes?: string | null;
   }
@@ -470,6 +471,7 @@ export async function submitKycRequest(
     kycDob: data.dob || null,
     kycExpiryDate: data.expiryDate || null,
     kycDocumentUrl: data.documentUrl,
+    kycBackDocumentUrl: data.backDocumentUrl || null,
     updatedAt: serverTimestamp(),
   };
   await runTransaction(db!, async (transaction) => {
@@ -487,6 +489,7 @@ export async function submitKycRequest(
         dob: data.dob,
         expiryDate: data.expiryDate,
         documentUrl: data.documentUrl,
+        backDocumentUrl: data.backDocumentUrl || null,
         aiVerified: data.status === 'verified'
       },
       createdAt: serverTimestamp(),
@@ -575,9 +578,16 @@ export function useLedgerEntries(uid?: string, maxItems = 100) {
       return;
     }
 
-    const q = query(collection(db, 'ledgerEntries'), where('uid', '==', uid), orderBy('createdAt', 'desc'), limit(maxItems));
+    const q = query(collection(db, 'ledgerEntries'), where('uid', '==', uid), limit(maxItems));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setEntries(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as LedgerEntry)));
+      const items = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as LedgerEntry));
+      // Sort in memory to avoid requiring a composite index in Firestore
+      items.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+        return dateB - dateA;
+      });
+      setEntries(items);
       setLoading(false);
     }, (error) => {
       console.error('Ledger listener failed:', error);

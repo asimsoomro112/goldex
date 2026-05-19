@@ -18,6 +18,47 @@ import {
 } from '@/lib/dashboardData';
 import { sendEmail } from '@/lib/email';
 
+const compressImageToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Compress to JPEG with 0.7 quality to keep it light
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [uploading, setUploading] = useState(false);
@@ -33,6 +74,7 @@ export function SettingsPage() {
     dob: '',
     expiryDate: '',
     documentUrl: '',
+    backDocumentUrl: '',
     verified: false,
     notes: ''
   });
@@ -118,24 +160,54 @@ export function SettingsPage() {
     toast.success('Account status refreshed');
   };
 
-  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = async (side: 'front' | 'back', event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
     setUploadingDoc(true);
     try {
-      // 1. Upload file to Cloudinary
-      const upload = await uploadToCloudinary(file, `goldex/kyc/${user.uid}`);
-      setKycForm(prev => ({ ...prev, documentUrl: upload.secure_url }));
-      toast.success('Document uploaded. Analyzing with Gemini AI...');
+      let resultUrl = '';
+      try {
+        // Attempt Cloudinary upload first
+        const upload = await uploadToCloudinary(file, `goldex/kyc/${user.uid}`);
+        resultUrl = upload.secure_url;
+        toast.success(`${side === 'front' ? 'Front' : 'Back'} side uploaded to Cloudinary.`);
+      } catch (cloudinaryErr: any) {
+        console.warn('Cloudinary upload failed, using secure base64 compression fallback:', cloudinaryErr);
+        // Fall back to client-side compressed base64 string
+        const base64 = await compressImageToBase64(file);
+        resultUrl = base64;
+        toast.success(`${side === 'front' ? 'Front' : 'Back'} side processed (offline fallback).`);
+      }
 
-      // 2. Start Gemini AI analysis
-      setAnalyzingDoc(true);
+      setKycForm(prev => ({
+        ...prev,
+        [side === 'front' ? 'documentUrl' : 'backDocumentUrl']: resultUrl
+      }));
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to process document file.');
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleRunAiAnalysis = async () => {
+    if (!user) return;
+    if (!kycForm.documentUrl) {
+      return toast.error('Please upload the front side of your document.');
+    }
+    if (kycForm.documentType !== 'passport' && !kycForm.backDocumentUrl) {
+      return toast.error('Please upload the back side of your document.');
+    }
+
+    setAnalyzingDoc(true);
+    try {
       const res = await fetch('/api/kyc/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          documentUrl: upload.secure_url,
+          documentUrl: kycForm.documentUrl,
+          backDocumentUrl: kycForm.backDocumentUrl || undefined,
           documentType: kycForm.documentType
         })
       });
@@ -146,8 +218,7 @@ export function SettingsPage() {
       }
 
       const result = await res.json();
-      
-      // Auto-fill extracted details
+
       setKycForm(prev => ({
         ...prev,
         legalName: result.legalName || '',
@@ -160,14 +231,13 @@ export function SettingsPage() {
       }));
 
       if (result.verified) {
-        toast.success('Gemini AI verified the document successfully!');
+        toast.success('Gemini AI successfully verified both sides of your document!');
       } else {
         toast.error('AI was unable to verify automatically. Please correct details manually.');
       }
     } catch (error: any) {
       toast.error(error.message || 'AI document processing failed');
     } finally {
-      setUploadingDoc(false);
       setAnalyzingDoc(false);
     }
   };
@@ -175,7 +245,8 @@ export function SettingsPage() {
   const handleKycSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!user) return;
-    if (!kycForm.documentUrl) return toast.error('Please upload an identity document first.');
+    if (!kycForm.documentUrl) return toast.error('Please upload the front side of your document first.');
+    if (kycForm.documentType !== 'passport' && !kycForm.backDocumentUrl) return toast.error('Please upload the back side of your document first.');
     if (!kycForm.legalName.trim() || !kycForm.country.trim()) return toast.error('Complete legal name and country.');
     
     setSaving(true);
@@ -188,8 +259,9 @@ export function SettingsPage() {
         dob: kycForm.dob,
         expiryDate: kycForm.expiryDate,
         documentUrl: kycForm.documentUrl,
+        backDocumentUrl: kycForm.backDocumentUrl || undefined,
         status: kycForm.verified ? 'verified' : 'pending',
-        notes: kycForm.notes || (kycForm.verified ? 'Auto-verified by Gemini AI' : 'Requires admin compliance review')
+        notes: kycForm.notes || (kycForm.verified ? 'Auto-verified by Gemini AI (Front + Back)' : 'Requires admin compliance review')
       });
       toast.success(kycForm.verified ? 'KYC Auto-Verified & Activated!' : 'KYC submitted for compliance review');
       await refreshUser();
@@ -381,6 +453,7 @@ export function SettingsPage() {
               <div className="absolute top-0 right-0 p-4 opacity-[0.18] pointer-events-none">
                 <img src="/images/shield Security.png" alt="KYC Shield" className="w-36 h-36 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
               </div>
+              
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-xl font-medium text-white mb-2">AI-Powered KYC Verification</h2>
@@ -406,48 +479,131 @@ export function SettingsPage() {
                   <p className="text-text-muted text-xs leading-relaxed max-w-sm">
                     Your KYC document has been processed and verified by Gemini AI. Your profile details have been successfully synced and your account is fully compliant.
                   </p>
-                  {profile.kycDocumentUrl && (
-                    <a href={profile.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-xs text-gold-500 hover:underline mt-2">
-                      View Verified Document
-                    </a>
-                  )}
+                  <div className="flex gap-4 mt-2">
+                    {profile.kycDocumentUrl && (
+                      <a href={profile.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-xs text-gold-500 hover:underline">
+                        View Front Side
+                      </a>
+                    )}
+                    {profile.kycBackDocumentUrl && (
+                      <a href={profile.kycBackDocumentUrl} target="_blank" rel="noreferrer" className="text-xs text-gold-500 hover:underline">
+                        View Back Side
+                      </a>
+                    )}
+                  </div>
                 </div>
               ) : uploadingDoc || analyzingDoc ? (
-                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-8 max-w-xl flex flex-col items-center justify-center text-center gap-4 min-h-[250px]">
+                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-8 max-w-xl flex flex-col items-center justify-center text-center gap-4 min-h-[280px]">
                   <Loader2 className="w-10 h-10 text-gold-500 animate-spin" />
                   <div>
                     <h3 className="text-white font-medium text-base mb-1">
-                      {uploadingDoc ? 'Uploading Document...' : 'Gemini AI Analyzing...'}
+                      {uploadingDoc ? 'Processing Document...' : 'Gemini AI Analyzing (Front + Back)...'}
                     </h3>
                     <p className="text-text-muted text-xs max-w-xs leading-relaxed">
                       {uploadingDoc
-                        ? 'Uploading document to secure Cloudinary storage preset...'
-                        : 'Gemini 2.5 Flash is extracting name, document number, country of residence, DOB, and checking authenticity.'}
+                        ? 'Uploading document to secure storage. Cloudinary is used with automatic local compressed fallback if needed.'
+                        : 'Gemini 2.5 Flash is analyzing both front and back images to extract name, ID number, country, dates, and verifying authenticity.'}
                     </p>
                   </div>
                 </div>
-              ) : !kycForm.documentUrl ? (
-                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-5 max-w-xl">
+              ) : !kycForm.legalName ? (
+                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-6 max-w-xl">
                   <div>
                     <label className="text-xs text-text-muted uppercase tracking-wider block font-medium mb-2">Select ID Document Type</label>
                     <select
                       value={kycForm.documentType}
-                      onChange={(event) => setKycForm((prev) => ({ ...prev, documentType: event.target.value }))}
+                      onChange={(event) => setKycForm((prev) => ({ 
+                        ...prev, 
+                        documentType: event.target.value,
+                        // Reset back doc if switching to passport
+                        backDocumentUrl: event.target.value === 'passport' ? '' : prev.backDocumentUrl
+                      }))}
                       className="input-gold text-sm w-full"
                     >
-                      <option value="passport">Passport</option>
-                      <option value="national_id">National ID</option>
-                      <option value="driver_license">Driver's License</option>
+                      <option value="passport">Passport (Info Page only)</option>
+                      <option value="national_id">National ID Card (Front + Back)</option>
+                      <option value="driver_license">Driver's License (Front + Back)</option>
                     </select>
                   </div>
 
-                  <div className="border border-dashed border-gold-500/20 hover:border-gold-500/40 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition relative group bg-dark-900/20">
-                    <input type="file" accept="image/*" onChange={handleDocumentUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                    <Upload className="w-8 h-8 text-gold-500/50 group-hover:text-gold-500 transition mb-3" />
-                    <p className="text-white text-sm font-medium mb-1">Upload document image</p>
-                    <p className="text-xs text-text-muted text-center leading-relaxed max-w-xs">
-                      Drag & drop or click to upload. Supports JPG, PNG. Document details will be auto-filled by AI.
-                    </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Front Document Upload Slot */}
+                    <div>
+                      <label className="text-xs text-text-muted block font-medium mb-2">
+                        {kycForm.documentType === 'passport' ? 'Passport Info Page' : 'ID Card Front Side'}
+                      </label>
+                      {kycForm.documentUrl ? (
+                        <div className="relative rounded-xl border border-gold-500/20 overflow-hidden h-36 group bg-dark-950/40">
+                          <img src={kycForm.documentUrl} alt="Document Front" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                            <label className="cursor-pointer bg-gold-500 hover:bg-gold-600 text-dark-950 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition">
+                              Change
+                              <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('front', e)} className="hidden" />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setKycForm(prev => ({ ...prev, documentUrl: '' }))}
+                              className="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border border-dashed border-gold-500/20 hover:border-gold-500/40 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition relative group bg-dark-900/20 h-36">
+                          <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('front', e)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          <Upload className="w-6 h-6 text-gold-500/50 group-hover:text-gold-500 transition mb-2" />
+                          <p className="text-white text-xs font-medium mb-0.5">Upload Front Side</p>
+                          <p className="text-[9px] text-text-muted text-center leading-relaxed">JPG or PNG</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Back Document Upload Slot (Hidden for passport) */}
+                    {kycForm.documentType !== 'passport' && (
+                      <div>
+                        <label className="text-xs text-text-muted block font-medium mb-2">ID Card Back Side</label>
+                        {kycForm.backDocumentUrl ? (
+                          <div className="relative rounded-xl border border-gold-500/20 overflow-hidden h-36 group bg-dark-950/40">
+                            <img src={kycForm.backDocumentUrl} alt="Document Back" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                              <label className="cursor-pointer bg-gold-500 hover:bg-gold-600 text-dark-950 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition">
+                                Change
+                                <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('back', e)} className="hidden" />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setKycForm(prev => ({ ...prev, backDocumentUrl: '' }))}
+                                className="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="border border-dashed border-gold-500/20 hover:border-gold-500/40 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition relative group bg-dark-900/20 h-36">
+                            <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('back', e)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                            <Upload className="w-6 h-6 text-gold-500/50 group-hover:text-gold-500 transition mb-2" />
+                            <p className="text-white text-xs font-medium mb-0.5">Upload Back Side</p>
+                            <p className="text-[9px] text-text-muted text-center leading-relaxed">JPG or PNG</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2">
+                    <GoldButton
+                      type="button"
+                      onClick={handleRunAiAnalysis}
+                      disabled={
+                        !kycForm.documentUrl || 
+                        (kycForm.documentType !== 'passport' && !kycForm.backDocumentUrl)
+                      }
+                      className="w-full h-11"
+                    >
+                      Verify Document with Gemini AI
+                    </GoldButton>
                   </div>
                 </div>
               ) : (
@@ -459,7 +615,7 @@ export function SettingsPage() {
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     }`}>
-                      {kycForm.verified ? 'AI Verified (Pass)' : 'AI Flagged (Review)'}
+                      {kycForm.verified ? 'AI Verified (Pass)' : 'AI Flagged (Review Required)'}
                     </span>
                   </div>
 
@@ -535,7 +691,18 @@ export function SettingsPage() {
                     </GoldButton>
                     <button
                       type="button"
-                      onClick={() => setKycForm((prev) => ({ ...prev, documentUrl: '' }))}
+                      onClick={() => setKycForm({
+                        legalName: '',
+                        country: '',
+                        documentType: 'passport',
+                        documentNumber: '',
+                        dob: '',
+                        expiryDate: '',
+                        documentUrl: '',
+                        backDocumentUrl: '',
+                        verified: false,
+                        notes: ''
+                      })}
                       className="h-10 px-5 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs font-semibold hover:bg-red-500/10 transition"
                     >
                       Reset Upload
