@@ -38,16 +38,18 @@ export function DashboardHome() {
     const initWidget = () => {
       const container = document.getElementById(containerId);
       if (container && (window as any).TradingView) {
+        const isMobile = window.innerWidth < 640;
         tvWidget = new (window as any).TradingView.widget({
           autosize: true,
           symbol: "OANDA:XAUUSD",
-          interval: "60",
+          interval: isMobile ? "D" : "60",
           timezone: "Etc/UTC",
           theme: "dark",
           style: "1",
           locale: "en",
           enable_publishing: false,
           hide_side_toolbar: true,
+          hide_top_toolbar: isMobile,
           allow_symbol_change: false,
           container_id: containerId,
           studies: [],
@@ -213,11 +215,11 @@ export function DashboardHome() {
                </div>
                
                {activeChartTab === 'live-chart' ? (
-                 <div className="h-[320px] w-full rounded-xl overflow-hidden border border-gold-500/10 bg-dark-950/60 relative">
+                 <div className="h-[280px] sm:h-[360px] w-full rounded-xl overflow-hidden border border-gold-500/10 bg-dark-950/60 relative">
                    <div id="tradingview_gold_chart" className="w-full h-full" />
                  </div>
                ) : (
-                 <div className="h-[320px] w-full">
+                 <div className="h-[280px] sm:h-[360px] w-full">
                    <div className="h-full rounded-xl border border-gold-500/10 bg-dark-900/40 flex flex-col items-center justify-center text-center px-6 overflow-hidden relative">
                      {!hasLiveData && (
                         <div className="flex flex-col items-center justify-center gap-2 mb-4 relative z-10">
