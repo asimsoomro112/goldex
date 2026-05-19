@@ -33,20 +33,26 @@ export function InvestPage() {
 
   const submitDeposit = async () => {
     if (!user || isInvalid) return;
+
+    const cleanHash = txHash.trim();
+    if (!cleanHash) {
+      toast.error('Transaction Hash is required as proof of deposit.');
+      return;
+    }
+    if (!/^0x[a-fA-F0-9]{64}$/.test(cleanHash)) {
+      toast.error('Please enter a valid BEP20 (BSC) Transaction Hash (64-character hex starting with 0x).');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await createDepositRequest(user.uid, numericAmount, txHash);
+      await createDepositRequest(user.uid, numericAmount, cleanHash);
       await sendEmail('deposit_request', {
         to: user.email,
         name: user.displayName,
-        data: { amount: numericAmount, txHash },
+        data: { amount: numericAmount, txHash: cleanHash },
       });
-      await sendEmail('investment_selected', {
-        to: user.email,
-        name: user.displayName,
-        data: { amount: numericAmount, plan: planName },
-      });
-      toast.success('Deposit request saved. We will verify it from live transaction data.');
+      toast.success('Deposit request saved successfully. Our admin team will verify it.');
       setTxHash('');
     } catch (error: any) {
       toast.error(error.message || 'Could not save deposit request.');
@@ -176,13 +182,19 @@ export function InvestPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-text-secondary mb-2">Transaction Hash (optional)</label>
+                  <label className="block text-sm text-white font-medium mb-2">
+                    Transaction Hash <span className="text-danger">*</span>
+                  </label>
                   <input
                     value={txHash}
                     onChange={(e) => setTxHash(e.target.value)}
-                    className="input-gold font-mono text-sm"
-                    placeholder="Paste BEP20 tx hash after deposit"
+                    className={`input-gold font-mono text-sm ${txHash && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim()) ? 'border-danger focus:border-danger' : ''}`}
+                    placeholder="Paste BEP20 tx hash starting with 0x"
+                    required
                   />
+                  {txHash && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim()) && (
+                    <p className="text-danger text-[10px] mt-1">Must be a 64-character hex starting with 0x.</p>
+                  )}
                 </div>
 
                 <GoldButton className="w-full h-14 text-base" disabled={isInvalid || submitting} onClick={submitDeposit}>

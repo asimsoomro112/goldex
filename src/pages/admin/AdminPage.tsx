@@ -186,6 +186,9 @@ export function AdminPage() {
                       await approveDeposit(deposit, adminUser?.uid || 'unknown-admin');
                       const account = findUser(deposit.uid);
                       await sendEmail('deposit_verified', { to: account?.email, name: account?.displayName, data: { amount: deposit.amount } });
+                      const amountNum = Number(deposit.amount || 0);
+                      const planName = amountNum >= 5000 ? 'Elite' : amountNum >= 500 ? 'Growth' : 'Starter';
+                      await sendEmail('investment_selected', { to: account?.email, name: account?.displayName, data: { amount: deposit.amount, plan: planName } });
                     }, 'Deposit approved')} className="btn-gold h-9 px-3 text-xs">
                       <CheckCircle2 className="w-4 h-4" /> Approve
                     </button>
