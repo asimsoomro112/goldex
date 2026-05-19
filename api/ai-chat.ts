@@ -18,7 +18,12 @@ export default async function handler(req: any, res: any) {
     const text = await generateGoldExAiResponse(req.body);
     return res.status(200).json({ text });
   } catch (error: any) {
-    return res.status(error.statusCode || 500).json({ error: error.message || "AI request failed." });
+    console.error("AI handler error:", error);
+    return res.status(500).json({ 
+      error: error.message || "AI request failed.",
+      stack: error.stack,
+      details: String(error)
+    });
   }
 }
 
