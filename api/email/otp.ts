@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createOtp, sendGoldExEmail } from "../../src/server/emailService";
+import { createOtp, sendGoldExEmail } from "../_services/emailService";
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { adminDb } from "../../src/server/firebaseAdmin";
+import { adminDb } from "../_services/firebaseAdmin";
 
 export default async function handler(req: any, res: any) {
   setApiHeaders(res);
