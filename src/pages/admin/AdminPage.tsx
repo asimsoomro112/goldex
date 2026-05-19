@@ -176,10 +176,20 @@ export function AdminPage() {
           <Table headers={['User', 'Amount', 'TX Hash', 'Investment', 'Actions']}>
             {pendingDeposits.length === 0 ? <EmptyRow colSpan={5} label="No pending deposits." /> : pendingDeposits.map((deposit) => (
               <tr key={deposit.id} className="border-b border-gold-500/10">
-                <td className="px-4 py-3 font-mono text-xs text-text-secondary">{deposit.uid}</td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(deposit.uid)?.displayName || 'Unknown User'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(deposit.uid)?.email || deposit.uid}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3 font-mono text-white">${Number(deposit.amount || 0).toFixed(2)}</td>
                 <td className="px-4 py-3 font-mono text-xs text-text-muted max-w-[220px] truncate">{deposit.txHash || '-'}</td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted">{deposit.investmentId || '-'}</td>
+                <td className="px-4 py-3 text-xs text-text-muted">
+                  <div>
+                    <p className="font-sans font-medium text-gold-500">{Number(deposit.amount || 0) >= 5000 ? 'Elite' : Number(deposit.amount || 0) >= 500 ? 'Growth' : 'Starter'}</p>
+                    <p className="text-[10px] text-text-muted">{deposit.investmentId || '-'}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <button onClick={() => runAction(async () => {
@@ -210,7 +220,12 @@ export function AdminPage() {
           <Table headers={['User', 'Amount', 'Profit Available', 'Total Profit', 'Add Profit']}>
             {activeInvestments.length === 0 ? <EmptyRow colSpan={5} label="No active investments." /> : activeInvestments.map((investment) => (
               <tr key={investment.id} className="border-b border-gold-500/10">
-                <td className="px-4 py-3 font-mono text-xs text-text-secondary">{investment.uid}</td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(investment.uid)?.displayName || 'Unknown User'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(investment.uid)?.email || investment.uid}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3 font-mono text-white">${Number(investment.amount || 0).toFixed(2)}</td>
                 <td className="px-4 py-3 font-mono text-profit-green">${Number(investment.profitAvailable || 0).toFixed(2)}</td>
                 <td className="px-4 py-3 font-mono text-white">${Number(investment.profitTotal || 0).toFixed(2)}</td>
@@ -252,12 +267,25 @@ export function AdminPage() {
 
         {(activeSection === 'overview' || activeSection === 'withdrawals') && <Section title="Pending Withdrawals">
           <Table headers={['User', 'Amount', 'Investment', 'Wallet', 'Status', 'Actions']}>
-            {pendingWithdrawals.length === 0 ? <EmptyRow colSpan={6} label="No pending withdrawals." /> : pendingWithdrawals.map((withdrawal) => (
-              <tr key={withdrawal.id} className="border-b border-gold-500/10">
-                <td className="px-4 py-3 font-mono text-xs text-text-secondary">{withdrawal.uid}</td>
-                <td className="px-4 py-3 font-mono text-white">${Number(withdrawal.amount || 0).toFixed(2)}</td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted">{withdrawal.investmentId || '-'}</td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted max-w-[280px] truncate">{withdrawal.walletAddress}</td>
+            {pendingWithdrawals.length === 0 ? <EmptyRow colSpan={6} label="No pending withdrawals." /> : pendingWithdrawals.map((withdrawal) => {
+              const linkedInv = investments.find((inv) => inv.id === withdrawal.investmentId);
+              const planName = linkedInv ? (Number(linkedInv.amount || 0) >= 5000 ? 'Elite' : Number(linkedInv.amount || 0) >= 500 ? 'Growth' : 'Starter') : 'N/A';
+              return (
+                <tr key={withdrawal.id} className="border-b border-gold-500/10">
+                  <td className="px-4 py-3 text-xs text-text-secondary">
+                    <div>
+                      <p className="font-sans font-medium text-white">{findUser(withdrawal.uid)?.displayName || 'Unknown User'}</p>
+                      <p className="text-[10px] text-text-muted">{findUser(withdrawal.uid)?.email || withdrawal.uid}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-white">${Number(withdrawal.amount || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-xs text-text-muted">
+                    <div>
+                      <p className="font-sans font-medium text-gold-500">{planName}</p>
+                      <p className="text-[10px] text-text-muted">{withdrawal.investmentId || '-'}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-text-muted max-w-[280px] truncate">{withdrawal.walletAddress}</td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{withdrawal.status}</span></td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">
@@ -280,7 +308,8 @@ export function AdminPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+            );
+          })}
           </Table>
         </Section>}
 
@@ -323,7 +352,12 @@ export function AdminPage() {
           <Table headers={['User', 'Label', 'Address', 'Status', 'Actions']}>
             {pendingWallets.length === 0 ? <EmptyRow colSpan={5} label="No pending wallet requests." /> : pendingWallets.map((wallet) => (
               <tr key={wallet.id} className="border-b border-gold-500/10">
-                <td className="px-4 py-3 font-mono text-xs text-text-secondary">{wallet.uid}</td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(wallet.uid)?.displayName || 'Unknown User'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(wallet.uid)?.email || wallet.uid}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-white">{wallet.label || 'BEP20 wallet'}</td>
                 <td className="px-4 py-3 font-mono text-xs text-text-muted max-w-[320px] truncate">{wallet.address}</td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{wallet.status}</span></td>
@@ -344,8 +378,18 @@ export function AdminPage() {
               <tr key={request.id} className="border-b border-gold-500/10">
                 <td className="px-4 py-3 text-text-secondary">{request.createdAt?.toDate ? request.createdAt.toDate().toLocaleString() : '-'}</td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{request.action}</span></td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted">{request.requestedBy}</td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted">{request.targetUid}</td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(request.requestedBy)?.displayName || 'Admin'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(request.requestedBy)?.email || request.requestedBy}</p>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(request.targetUid)?.displayName || 'Unknown User'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(request.targetUid)?.email || request.targetUid}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3 font-mono text-white">{typeof request.amount === 'number' ? `$${request.amount.toFixed(2)}` : '-'}</td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{request.status}</span></td>
                 <td className="px-4 py-3">
@@ -375,8 +419,18 @@ export function AdminPage() {
               <tr key={log.id} className="border-b border-gold-500/10">
                 <td className="px-4 py-3 text-text-secondary">{log.createdAt?.toDate ? log.createdAt.toDate().toLocaleString() : '-'}</td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{log.action}</span></td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted">{log.actorUid}</td>
-                <td className="px-4 py-3 font-mono text-xs text-text-muted">{log.targetUid}</td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(log.actorUid)?.displayName || 'Admin'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(log.actorUid)?.email || log.actorUid}</p>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-xs text-text-secondary">
+                  <div>
+                    <p className="font-sans font-medium text-white">{findUser(log.targetUid)?.displayName || '-'}</p>
+                    <p className="text-[10px] text-text-muted">{findUser(log.targetUid)?.email || log.targetUid}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3 font-mono text-white">{typeof log.amount === 'number' ? `$${log.amount.toFixed(2)}` : '-'}</td>
                 <td className="px-4 py-3 font-mono text-xs text-text-muted">{log.collection}/{log.recordId}</td>
               </tr>
