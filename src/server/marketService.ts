@@ -7,12 +7,23 @@ type GoldPriceSnapshot = {
   configured: boolean;
 };
 
+async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
   // 1. Try Binance PAXG/USDT (Real-time, free, no key, updates every second)
   try {
-    const response = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT", {
-      signal: AbortSignal.timeout(5000)
-    });
+    const response = await fetchWithTimeout("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT", 5000);
     if (response.ok) {
       const data = await response.json();
       const price = Number(data?.price);
@@ -33,9 +44,7 @@ export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
 
   // 2. Try Bybit PAXG/USDT (Real-time, free, no key)
   try {
-    const response = await fetch("https://api.bybit.com/v5/market/tickers?category=spot&symbol=PAXGUSDT", {
-      signal: AbortSignal.timeout(5000)
-    });
+    const response = await fetchWithTimeout("https://api.bybit.com/v5/market/tickers?category=spot&symbol=PAXGUSDT", 5000);
     if (response.ok) {
       const data = await response.json();
       const price = Number(data?.result?.list?.[0]?.lastPrice);
@@ -57,9 +66,7 @@ export async function getGoldPriceSnapshot(): Promise<GoldPriceSnapshot> {
   // 3. Fallback to Metalprice API (using configured env key or user key)
   const apiKey = process.env.METALPRICE_API_KEY || "50daaf9ca411c00d37dc1d36f851e76e";
   try {
-    const response = await fetch(`https://api.metalpriceapi.com/v1/latest?api_key=${apiKey}&base=USD&currencies=EUR,XAU,XAG`, {
-      signal: AbortSignal.timeout(5000)
-    });
+    const response = await fetchWithTimeout(`https://api.metalpriceapi.com/v1/latest?api_key=${apiKey}&base=USD&currencies=EUR,XAU,XAG`, 5000);
     if (response.ok) {
       const data = await response.json();
       const rawXau = data?.rates?.XAU;
