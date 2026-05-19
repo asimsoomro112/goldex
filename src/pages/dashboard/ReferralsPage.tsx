@@ -57,7 +57,7 @@ export function ReferralsPage() {
         <div className="flex-1 relative z-10">
           <h1 className="text-3xl font-display font-medium text-white mb-2">Referral Center</h1>
           <p className="text-text-secondary mb-6 max-w-md">
-            Invite your partners to join GoldEx. Earn <span className="text-gold-500 font-semibold">$10.00 profit commission</span> for every $50.00 they invest, while they receive a <span className="text-gold-500 font-semibold">$5.00 startup bonus</span>!
+            Invite your partners to join GoldEx. Earn <span className="text-gold-500 font-semibold">$10.00 profit commission</span> for every $50.00 they invest on their <span className="text-gold-500 font-semibold">first investment only</span>, while they receive a <span className="text-gold-500 font-semibold">$5.00 startup bonus</span>!
           </p>
 
           <label className="text-xs text-text-muted uppercase tracking-wider mb-2 block font-medium">Your Unique Referral Link</label>
@@ -101,7 +101,7 @@ export function ReferralsPage() {
       <div className="flex items-start gap-4 p-5 rounded-2xl border border-gold-500/10 bg-dark-900/40 text-sm text-text-secondary leading-relaxed">
         <AlertCircle className="w-5 h-5 text-gold-500 shrink-0 mt-0.5" />
         <div>
-          <span className="text-white font-medium">How it works:</span> When a referred user completes their first deposit and investment (minimum $50.00), our system automatically detects it. You are credited with $10.00 for every $50.00 of their investment, and their pending half-reward ($5.00 per $50.00) is instantly released and credited to their withdrawable profit balance.
+          <span className="text-white font-medium">How it works:</span> When a referred user completes their <span className="text-white font-medium">first deposit and investment</span> (minimum $50.00), our system automatically detects it. You are credited with a <span className="text-white font-medium">one-time commission</span> of $10.00 for every $50.00 of their initial investment (e.g. $10.00 for a $50.00 investment, $20.00 for a $100.00 investment). Their pending welcome signup bonus ($5.00 per $50.00 of that first investment) is also released and credited. Any subsequent investments by this user will not earn further referral bonuses.
         </div>
       </div>
 
