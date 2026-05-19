@@ -10,8 +10,14 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    return res.status(200).json(await getGoldPriceSnapshot());
+    const data = await getGoldPriceSnapshot();
+    return res.status(200).json(data);
   } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Gold price lookup failed." });
+    console.error("Gold price handler error:", error);
+    return res.status(500).json({ 
+      error: error.message || "Gold price lookup failed.", 
+      stack: error.stack,
+      details: String(error)
+    });
   }
 }
