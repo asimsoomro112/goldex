@@ -70,9 +70,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     async loginWithGoogle() {
       ensureFirebase();
-      const credential = await signInWithPopup(auth!, googleProvider);
-      await ensureUserDocument(credential.user, credential.user.displayName || 'Account');
-      return credential.user;
+      try {
+        const credential = await signInWithPopup(auth!, googleProvider);
+        await ensureUserDocument(credential.user, credential.user.displayName || 'Account');
+        return credential.user;
+      } catch (error: any) {
+        console.error('Google Auth Error:', error);
+        if (error.code === 'auth/unauthorized-domain') {
+          throw new Error(`This domain (${window.location.hostname}) is not authorized in your Firebase Project. Please go to Firebase Console -> Authentication -> Settings -> Authorized Domains and add "${window.location.hostname}".`);
+        }
+        if (error.code === 'auth/operation-not-allowed') {
+          throw new Error('Google Sign-In provider is disabled in your Firebase project. Please enable it in Firebase Console -> Authentication -> Sign-in method.');
+        }
+        if (error.code === 'auth/popup-blocked') {
+          throw new Error('Sign-in popup was blocked by your browser. Please allow popups for this site and try again.');
+        }
+        throw error;
+      }
     },
     async logout() {
       ensureFirebase();
