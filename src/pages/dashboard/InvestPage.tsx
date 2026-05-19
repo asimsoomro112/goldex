@@ -22,6 +22,12 @@ export function InvestPage() {
   const [checkingTx, setCheckingTx] = useState<string | null>(null);
   const [txStatuses, setTxStatuses] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
+  
+  // Web3 state hooks
+  const [depositMode, setDepositMode] = useState<'web3' | 'manual'>('web3');
+  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
+  const [web3Loading, setWeb3Loading] = useState(false);
+
   const { user } = useAuth();
   const { investments, deposits } = useDashboardData(user?.uid);
 
@@ -58,6 +64,104 @@ export function InvestPage() {
       toast.error(error.message || 'Could not save deposit request.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const connectWallet = async () => {
+    if (typeof (window as any).ethereum === 'undefined') {
+      toast.error('No Web3 wallet (like MetaMask or Trust Wallet) was detected. Please open this page in a Web3-compatible browser.');
+      return;
+    }
+    try {
+      const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts?.[0]) {
+        setConnectedWallet(accounts[0]);
+        toast.success('Wallet connected successfully!');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Could not connect Web3 wallet.');
+    }
+  };
+
+  const payWithWeb3 = async () => {
+    if (!user || isInvalid) return;
+    if (typeof (window as any).ethereum === 'undefined') {
+      toast.error('No Web3 wallet detected. Please connect MetaMask or Trust Wallet.');
+      return;
+    }
+
+    setWeb3Loading(true);
+    const toastId = toast.loading('Initiating Web3 Payment...');
+    try {
+      // 1. Connect Accounts
+      const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+      const walletAddress = accounts[0];
+      setConnectedWallet(walletAddress);
+
+      // 2. Switch network to BSC (0x38 = 56)
+      try {
+        await (window as any).ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x38' }],
+        });
+      } catch (switchError: any) {
+        if (switchError.code === 4902) {
+          await (window as any).ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x38',
+              chainName: 'Binance Smart Chain',
+              nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+              rpcUrls: ['https://bsc-dataseed.binance.org/'],
+              blockExplorerUrls: ['https://bscscan.com/']
+            }]
+          });
+        } else {
+          throw switchError;
+        }
+      }
+
+      // 3. Encode USDT transfer transfer(address recipient, uint256 amount)
+      // USDT Contract on BSC: 0x55d398326f99059ff775485246999027b3197955
+      const USDT_CONTRACT = "0x55d398326f99059ff775485246999027b3197955";
+      const methodId = 'a9059cbb';
+      const cleanDest = USDT_BEP20_ADDRESS.startsWith('0x') ? USDT_BEP20_ADDRESS.slice(2) : USDT_BEP20_ADDRESS;
+      const paddedDest = cleanDest.padStart(64, '0').toLowerCase();
+      const amountInWei = BigInt(numericAmount) * BigInt(10 ** 18);
+      const paddedAmount = amountInWei.toString(16).padStart(64, '0').toLowerCase();
+      const transferData = '0x' + methodId + paddedDest + paddedAmount;
+
+      toast.loading('Confirming transaction in wallet...', { id: toastId });
+
+      // 4. Trigger wallet popup
+      const hash = await (window as any).ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: walletAddress,
+          to: USDT_CONTRACT,
+          data: transferData,
+        }]
+      });
+
+      toast.loading('Transaction submitted! Registering in database...', { id: toastId });
+
+      // 5. Create deposit request record
+      await createDepositRequest(user.uid, numericAmount, hash);
+      await sendEmail('deposit_request', {
+        to: user.email,
+        name: user.displayName,
+        data: { amount: numericAmount, txHash: hash },
+      });
+
+      toast.success('USDT Payment complete! Tracking transaction confirmations.', { id: toastId });
+      
+      // Auto trigger tracker
+      checkDepositStatus(hash, hash);
+    } catch (error: any) {
+      console.error('Web3 payment error:', error);
+      toast.error(error.message || 'Web3 transaction failed or cancelled.', { id: toastId });
+    } finally {
+      setWeb3Loading(false);
     }
   };
 
@@ -161,45 +265,102 @@ export function InvestPage() {
                   </div>
                 </div>
 
+                {/* Deposit Mode Selector */}
                 <div>
-                  <label className="block text-sm text-text-secondary mb-3">Deposit Method</label>
-                  <div className="rounded-xl border border-gold-500 bg-gold-500/10 p-4">
-                    <p className="text-sm font-medium text-gold-500">USDT (BEP20)</p>
-                    <p className="text-xs text-text-muted mt-1">Only BEP20 crypto deposits are supported.</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-text-secondary mb-3">Deposit Address</label>
-                  <div className="flex gap-2">
-                    <div className="flex-1 rounded-xl border border-gold-500/20 bg-dark-900 px-4 py-3 font-mono text-xs text-gold-500 break-all">
-                      {USDT_BEP20_ADDRESS}
-                    </div>
-                    <button type="button" onClick={copyAddress} className="btn-ghost px-4 rounded-xl">
-                      <Copy className="w-4 h-4" />
+                  <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-3">Deposit Method</label>
+                  <div className="flex gap-2 p-1 bg-dark-950/80 border border-gold-500/10 rounded-xl mb-4">
+                    <button 
+                      type="button"
+                      onClick={() => setDepositMode('web3')}
+                      className={`flex-1 py-3 text-[12px] font-sans font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${depositMode === 'web3' ? 'bg-gold-500 text-dark-900 shadow-[0_2px_8px_rgba(212,175,55,0.3)]' : 'text-[#E8E4D4]/40 hover:text-white bg-transparent'}`}
+                    >
+                      <Wallet className="w-4 h-4" /> Web3 Direct Pay
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setDepositMode('manual')}
+                      className={`flex-1 py-3 text-[12px] font-sans font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${depositMode === 'manual' ? 'bg-gold-500 text-dark-900 shadow-[0_2px_8px_rgba(212,175,55,0.3)]' : 'text-[#E8E4D4]/40 hover:text-white bg-transparent'}`}
+                    >
+                      <History className="w-4 h-4" /> Manual CEX Transfer
                     </button>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm text-white font-medium mb-2">
-                    Transaction Hash <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    value={txHash}
-                    onChange={(e) => setTxHash(e.target.value)}
-                    className={`input-gold font-mono text-sm ${txHash && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim()) ? 'border-danger focus:border-danger' : ''}`}
-                    placeholder="Paste BEP20 tx hash starting with 0x"
-                    required
-                  />
-                  {txHash && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim()) && (
-                    <p className="text-danger text-[10px] mt-1">Must be a 64-character hex starting with 0x.</p>
-                  )}
-                </div>
+                {depositMode === 'web3' ? (
+                  <div className="space-y-6">
+                    <div className="rounded-xl border border-gold-500/10 bg-dark-900/40 p-5 text-center relative overflow-hidden">
+                      <div className="relative z-10 flex flex-col items-center justify-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center border border-gold-500/20 text-gold-500">
+                          <Wallet className="w-6 h-6 animate-pulse" />
+                        </div>
+                        {connectedWallet ? (
+                          <div className="space-y-1">
+                            <p className="text-xs text-text-muted">Connected Wallet</p>
+                            <p className="text-sm font-mono text-white">{connectedWallet.slice(0, 8)}...{connectedWallet.slice(-6)}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs text-text-muted">Connect your Web3 Wallet (MetaMask, Trust Wallet, etc.) for instant automated deposits.</p>
+                            <button
+                              type="button"
+                              onClick={connectWallet}
+                              className="btn-ghost text-xs px-4 py-2 border border-gold-500/20 rounded-lg text-gold-500 hover:bg-gold-500/10"
+                            >
+                              Connect Wallet
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                <GoldButton className="w-full h-14 text-base" disabled={isInvalid || submitting} onClick={submitDeposit}>
-                  {submitting ? 'Saving Request...' : 'Confirm Investment'} <ArrowRight className="w-5 h-5 ml-1" />
-                </GoldButton>
+                    <GoldButton 
+                      className="w-full h-14 text-base" 
+                      disabled={isInvalid || web3Loading} 
+                      onClick={payWithWeb3}
+                    >
+                      {web3Loading ? 'Paying via Wallet...' : 'Pay with Web3 Wallet'} <ArrowRight className="w-5 h-5 ml-1" />
+                    </GoldButton>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-dark-900/50 rounded-xl p-4 border border-gold-500/10">
+                      <p className="text-sm font-medium text-gold-500">USDT (BEP20)</p>
+                      <p className="text-xs text-text-muted mt-1">Send funds from your exchange (Binance, OKX, Bybit) or custom wallet to this address.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-text-secondary mb-2">Deposit Address</label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 rounded-xl border border-gold-500/20 bg-dark-900 px-4 py-3 font-mono text-xs text-gold-500 break-all">
+                          {USDT_BEP20_ADDRESS}
+                        </div>
+                        <button type="button" onClick={copyAddress} className="btn-ghost px-4 rounded-xl">
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-white font-medium mb-2">
+                        Transaction Hash <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        value={txHash}
+                        onChange={(e) => setTxHash(e.target.value)}
+                        className={`input-gold font-mono text-sm ${txHash && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim()) ? 'border-danger focus:border-danger' : ''}`}
+                        placeholder="Paste BEP20 tx hash starting with 0x"
+                        required
+                      />
+                      {txHash && !/^0x[a-fA-F0-9]{64}$/.test(txHash.trim()) && (
+                        <p className="text-danger text-[10px] mt-1">Must be a 64-character hex starting with 0x.</p>
+                      )}
+                    </div>
+
+                    <GoldButton className="w-full h-14 text-base" disabled={isInvalid || submitting} onClick={submitDeposit}>
+                      {submitting ? 'Saving Request...' : 'Confirm Manual Transfer'} <ArrowRight className="w-5 h-5 ml-1" />
+                    </GoldButton>
+                  </div>
+                )}
                 <p className="text-xs text-text-muted text-center">Principal stays locked. Profit starts after live deposit verification and stops after profit withdrawal/settlement.</p>
               </div>
             </div>
@@ -303,14 +464,43 @@ export function InvestPage() {
                          </div>
                        </td>
                       <td className="px-6 py-4">
-                        <button type="button" onClick={() => checkDepositStatus(deposit.id, deposit.txHash)} className="btn-ghost h-8 px-3 text-xs rounded-lg" disabled={checkingTx === deposit.id || !deposit.txHash}>
-                          {checkingTx === deposit.id ? 'Checking...' : 'Check'}
-                        </button>
-                        {txStatuses[deposit.id] && (
-                          <p className="text-[10px] text-text-muted mt-2">
-                            {txStatuses[deposit.id].status} · {txStatuses[deposit.id].confirmations}/{txStatuses[deposit.id].targetConfirmations} confirmations
-                          </p>
-                        )}
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <button 
+                            type="button" 
+                            onClick={() => checkDepositStatus(deposit.id, deposit.txHash)} 
+                            className="btn-ghost h-8 px-3 text-xs rounded-lg border border-gold-500/10 hover:bg-gold-500/5 text-gold-500" 
+                            disabled={checkingTx === deposit.id || !deposit.txHash}
+                          >
+                            {checkingTx === deposit.id ? 'Verifying...' : 'Verify On-Chain'}
+                          </button>
+                          
+                          {txStatuses[deposit.id] && (
+                            <div className="space-y-1">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium font-sans ${
+                                txStatuses[deposit.id].status === 'confirmed' ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25' :
+                                txStatuses[deposit.id].status === 'confirming' ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/25 animate-pulse' :
+                                txStatuses[deposit.id].status === 'failed' ? 'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/25' :
+                                'bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25'
+                              }`}>
+                                {txStatuses[deposit.id].status === 'confirmed' && '✅ BSC Confirmed'}
+                                {txStatuses[deposit.id].status === 'confirming' && `⏳ Confirming (${txStatuses[deposit.id].confirmations}/${txStatuses[deposit.id].targetConfirmations})`}
+                                {txStatuses[deposit.id].status === 'failed' && '❌ Failed/Reverted'}
+                                {txStatuses[deposit.id].status === 'pending_or_not_found' && '🔍 Node Scanning'}
+                              </span>
+                              
+                              {deposit.txHash && (
+                                <a 
+                                  href={`https://bscscan.com/tx/${deposit.txHash}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="block text-[10px] text-gold-500/70 hover:text-gold-500 hover:underline font-mono"
+                                >
+                                  View Explorer ↗
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
