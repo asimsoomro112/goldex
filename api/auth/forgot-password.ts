@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { adminAuth, adminDb } from "../_services/firebaseAdmin";
-import { createOtp, sendGoldExEmail } from "../_services/emailService";
+import { adminAuth, adminDb } from "../_services/firebaseAdmin.js";
+import { createOtp, sendGoldExEmail } from "../_services/emailService.js";
 
 export default async function handler(req: any, res: any) {
   setApiHeaders(res);

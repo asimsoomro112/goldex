@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { getGoldPriceSnapshot } from "./marketService";
+import { getGoldPriceSnapshot } from "./marketService.js";
 
 type ChatMessage = {
   role: string;

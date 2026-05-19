@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { getGoldPriceSnapshot } from "./_services/marketService";
+import { getGoldPriceSnapshot } from "./_services/marketService.js";
 
 export default async function handler(req: any, res: any) {
   res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");

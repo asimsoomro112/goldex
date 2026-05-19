@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { generateGoldExAiResponse } from "./_services/aiService";
+import { generateGoldExAiResponse } from "./_services/aiService.js";
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
