@@ -9,6 +9,7 @@ import { MIN_PROFIT_WITHDRAWAL, useDashboardData } from '@/lib/dashboardData';
 
 export function DashboardHome() {
   const [chartPeriod, setChartPeriod] = useState('7D');
+  const [activeChartTab, setActiveChartTab] = useState('live-chart');
   const [goldPrice, setGoldPrice] = useState<{ price: number | null; source: string; updatedAt: string } | null>(null);
   const { user } = useAuth();
   const { investments, totals, loading } = useDashboardData(user?.uid);
@@ -26,6 +27,69 @@ export function DashboardHome() {
     const interval = setInterval(fetchPrice, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // TradingView Widget Script Loader
+  useEffect(() => {
+    if (activeChartTab !== 'live-chart') return;
+
+    let tvWidget: any = null;
+    const containerId = "tradingview_gold_chart";
+
+    const initWidget = () => {
+      const container = document.getElementById(containerId);
+      if (container && (window as any).TradingView) {
+        tvWidget = new (window as any).TradingView.widget({
+          autosize: true,
+          symbol: "OANDA:XAUUSD",
+          interval: "60",
+          timezone: "Etc/UTC",
+          theme: "dark",
+          style: "1",
+          locale: "en",
+          enable_publishing: false,
+          hide_side_toolbar: true,
+          allow_symbol_change: false,
+          container_id: containerId,
+          studies: [],
+          backgroundColor: "#0d0d14",
+          gridColor: "rgba(212, 175, 55, 0.02)",
+          toolbar_bg: "#0d0d14",
+          hide_legend: true,
+          save_image: false,
+          overrides: {
+            "paneProperties.background": "#0d0d14",
+            "paneProperties.backgroundType": "solid",
+            "paneProperties.vertGridProperties.color": "rgba(212, 175, 55, 0.015)",
+            "paneProperties.horzGridProperties.color": "rgba(212, 175, 55, 0.015)",
+            "scalesProperties.textColor": "rgba(232, 228, 212, 0.5)",
+            "mainSeriesProperties.candleStyle.upColor": "#D4AF37",
+            "mainSeriesProperties.candleStyle.downColor": "#11111a",
+            "mainSeriesProperties.candleStyle.borderColor": "#D4AF37",
+            "mainSeriesProperties.candleStyle.borderUpColor": "#D4AF37",
+            "mainSeriesProperties.candleStyle.borderDownColor": "#2a2a3e",
+            "mainSeriesProperties.candleStyle.wickUpColor": "#D4AF37",
+            "mainSeriesProperties.candleStyle.wickDownColor": "#2a2a3e"
+          }
+        });
+      }
+    };
+
+    const existingScript = document.getElementById('tradingview-widget-script');
+    if (existingScript) {
+      // Give a tiny timeout for DOM to mount tradingview_gold_chart
+      const timer = setTimeout(initWidget, 100);
+      return () => clearTimeout(timer);
+    } else {
+      const script = document.createElement('script');
+      script.id = 'tradingview-widget-script';
+      script.src = 'https://s3.tradingview.com/tv.js';
+      script.type = 'text/javascript';
+      script.async = true;
+      script.onload = initWidget;
+      document.head.appendChild(script);
+    }
+  }, [activeChartTab]);
+
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -102,36 +166,68 @@ export function DashboardHome() {
         {/* Main Content Area: Chart and Table */}
          <div className="xl:col-span-2 flex flex-col gap-6">
             
-            {/* Profit Chart */}
+            {/* Market & Profit Chart */}
             <div className="gc p-[24px]">
-               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-[24px]">
-                 <h3 className="font-display font-medium text-[18px] text-white">Profit History</h3>
-                 <div className="flex gc bg-dark-900 border-gold-500/20 p-1 rounded-lg">
-                   {['7D', '30D', '90D', 'ALL'].map(p => (
-                     <button 
-                       key={p} 
-                       onClick={() => setChartPeriod(p)}
-                       className={cn(
-                         "px-[12px] py-[6px] text-[12px] font-sans font-medium rounded-[6px] transition-all cursor-none",
-                         chartPeriod === p ? "bg-gold-500 text-dark-900 shadow-[0_2px_8px_rgba(212,175,55,0.4)]" : "text-[#E8E4D4]/40 hover:text-white bg-transparent"
-                       )}
-                     >
-                       {p}
-                     </button>
-                   ))}
+               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-[20px]">
+                 <div className="flex gap-2 p-1 bg-dark-950/80 border border-gold-500/10 rounded-lg">
+                   <button 
+                     onClick={() => setActiveChartTab('live-chart')}
+                     className={cn(
+                       "px-4 py-2 text-[12px] font-sans font-medium rounded-md transition-all cursor-none",
+                       activeChartTab === 'live-chart' 
+                         ? "bg-gold-500 text-dark-900 shadow-[0_2px_8px_rgba(212,175,55,0.3)]" 
+                         : "text-[#E8E4D4]/40 hover:text-white bg-transparent"
+                     )}
+                   >
+                     📊 Live Gold Chart
+                   </button>
+                   <button 
+                     onClick={() => setActiveChartTab('profit-history')}
+                     className={cn(
+                       "px-4 py-2 text-[12px] font-sans font-medium rounded-md transition-all cursor-none",
+                       activeChartTab === 'profit-history' 
+                         ? "bg-gold-500 text-dark-900 shadow-[0_2px_8px_rgba(212,175,55,0.3)]" 
+                         : "text-[#E8E4D4]/40 hover:text-white bg-transparent"
+                     )}
+                   >
+                     💰 Profit History
+                   </button>
                  </div>
+
+                 {activeChartTab === 'profit-history' && (
+                   <div className="flex gc bg-dark-900 border-gold-500/20 p-1 rounded-lg">
+                     {['7D', '30D', '90D', 'ALL'].map(p => (
+                       <button 
+                         key={p} 
+                         onClick={() => setChartPeriod(p)}
+                         className={cn(
+                           "px-[12px] py-[6px] text-[12px] font-sans font-medium rounded-[6px] transition-all cursor-none",
+                           chartPeriod === p ? "bg-gold-500 text-dark-900 shadow-[0_2px_8px_rgba(212,175,55,0.4)]" : "text-[#E8E4D4]/40 hover:text-white bg-transparent"
+                         )}
+                       >
+                         {p}
+                       </button>
+                     ))}
+                   </div>
+                 )}
                </div>
                
-               <div className="h-[220px] w-full">
-                 <div className="h-full rounded-xl border border-gold-500/10 bg-dark-900/40 flex flex-col items-center justify-center text-center px-6 overflow-hidden relative">
-                   {!hasLiveData && (
-                      <div className="flex flex-col items-center justify-center gap-2 mb-4 relative z-10">
-                        <img src="/images/Empty Transactions.png" alt="" className="w-24 h-24 object-contain opacity-75 drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
-                      </div>
-                    )}
-                   <p className="text-sm text-text-muted relative z-10">{loading ? 'Loading live data...' : 'Profit starts after a verified $50-multiple investment. Withdrawal unlocks when profit reaches $50.'}</p>
+               {activeChartTab === 'live-chart' ? (
+                 <div className="h-[320px] w-full rounded-xl overflow-hidden border border-gold-500/10 bg-dark-950/60 relative">
+                   <div id="tradingview_gold_chart" className="w-full h-full" />
                  </div>
-               </div>
+               ) : (
+                 <div className="h-[320px] w-full">
+                   <div className="h-full rounded-xl border border-gold-500/10 bg-dark-900/40 flex flex-col items-center justify-center text-center px-6 overflow-hidden relative">
+                     {!hasLiveData && (
+                        <div className="flex flex-col items-center justify-center gap-2 mb-4 relative z-10">
+                          <img src="/images/Empty Transactions.png" alt="" className="w-24 h-24 object-contain opacity-75 drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
+                        </div>
+                      )}
+                     <p className="text-sm text-text-muted relative z-10">{loading ? 'Loading live data...' : 'Profit starts after a verified $50-multiple investment. Withdrawal unlocks when profit reaches $50.'}</p>
+                   </div>
+                 </div>
+               )}
             </div>
 
             {/* Active Investments */}
