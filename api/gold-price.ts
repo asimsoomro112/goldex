@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { getGoldPriceSnapshot } from "./_services/marketService.js";
 
 export default async function handler(req: any, res: any) {
