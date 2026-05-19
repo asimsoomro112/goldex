@@ -401,11 +401,25 @@ export function AdminPage() {
         </Section>}
 
         {(activeSection === 'overview' || activeSection === 'kyc') && <Section title="KYC Review Queue">
-          <Table headers={['Name', 'Email', 'Status', 'Notes', 'Actions']}>
-            {pendingKyc.length === 0 ? <EmptyRow colSpan={5} label="No pending KYC reviews." /> : pendingKyc.map((account) => (
+          <Table headers={['User', 'Extracted Details', 'Document', 'Status', 'Notes', 'Actions']}>
+            {pendingKyc.length === 0 ? <EmptyRow colSpan={6} label="No pending KYC reviews." /> : pendingKyc.map((account: any) => (
               <tr key={account.uid} className="border-b border-gold-500/10">
-                <td className="px-4 py-3 text-white">{account.displayName || 'Account'}</td>
-                <td className="px-4 py-3 text-text-secondary">{account.email || '-'}</td>
+                <td className="px-4 py-3 text-xs">
+                  <div className="text-white font-medium">{account.displayName || 'Account'}</div>
+                  <div className="text-text-muted text-[10px]">{account.email || '-'}</div>
+                </td>
+                <td className="px-4 py-3 text-xs text-text-secondary space-y-0.5">
+                  <div><span className="text-text-muted">Name:</span> {account.kycLegalName || '-'}</div>
+                  <div><span className="text-text-muted">Doc:</span> {account.kycDocumentType?.toUpperCase()} ({account.kycDocumentNumber || '-'})</div>
+                  <div><span className="text-text-muted">Country:</span> {account.kycCountry || '-'}</div>
+                </td>
+                <td className="px-4 py-3 text-xs">
+                  {account.kycDocumentUrl ? (
+                    <a href={account.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-gold-500 hover:underline">
+                      View Document
+                    </a>
+                  ) : 'No Doc'}
+                </td>
                 <td className="px-4 py-3"><span className="badge badge-gold">{account.kycStatus}</span></td>
                 <td className="px-4 py-3 text-xs text-text-muted">{account.kycNotes || '-'}</td>
                 <td className="px-4 py-3">

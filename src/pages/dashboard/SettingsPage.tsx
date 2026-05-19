@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GoldButton } from '@/components/ui/GoldButton';
-import { User, Shield, Bell, FileCheck, AlertTriangle, LogOut, WalletCards, Database, MailCheck, Trash2, Download } from 'lucide-react';
+import { User, Shield, Bell, FileCheck, AlertTriangle, LogOut, WalletCards, Database, MailCheck, Trash2, Download, Upload, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -25,7 +25,19 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
   const [prefs, setPrefs] = useState({ profit: true, referral: true, withdraw: true, ai: false, security: true, marketing: false });
-  const [kycForm, setKycForm] = useState({ legalName: '', country: '', documentType: 'passport' });
+  const [kycForm, setKycForm] = useState({
+    legalName: '',
+    country: '',
+    documentType: 'passport',
+    documentNumber: '',
+    dob: '',
+    expiryDate: '',
+    documentUrl: '',
+    verified: false,
+    notes: ''
+  });
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [analyzingDoc, setAnalyzingDoc] = useState(false);
   const [walletForm, setWalletForm] = useState({ label: '', address: '' });
   const { user, logout, resetPassword, sendVerificationEmail, refreshUser } = useAuth();
   const { profile, investments, deposits, withdrawals } = useDashboardData(user?.uid);
@@ -106,15 +118,81 @@ export function SettingsPage() {
     toast.success('Account status refreshed');
   };
 
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploadingDoc(true);
+    try {
+      // 1. Upload file to Cloudinary
+      const upload = await uploadToCloudinary(file, `goldex/kyc/${user.uid}`);
+      setKycForm(prev => ({ ...prev, documentUrl: upload.secure_url }));
+      toast.success('Document uploaded. Analyzing with Gemini AI...');
+
+      // 2. Start Gemini AI analysis
+      setAnalyzingDoc(true);
+      const res = await fetch('/api/kyc/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentUrl: upload.secure_url,
+          documentType: kycForm.documentType
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'AI analysis failed');
+      }
+
+      const result = await res.json();
+      
+      // Auto-fill extracted details
+      setKycForm(prev => ({
+        ...prev,
+        legalName: result.legalName || '',
+        country: result.country || '',
+        documentNumber: result.documentNumber || '',
+        dob: result.dob || '',
+        expiryDate: result.expiryDate || '',
+        verified: result.verified || false,
+        notes: result.notes || ''
+      }));
+
+      if (result.verified) {
+        toast.success('Gemini AI verified the document successfully!');
+      } else {
+        toast.error('AI was unable to verify automatically. Please correct details manually.');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'AI document processing failed');
+    } finally {
+      setUploadingDoc(false);
+      setAnalyzingDoc(false);
+    }
+  };
+
   const handleKycSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!user) return;
+    if (!kycForm.documentUrl) return toast.error('Please upload an identity document first.');
     if (!kycForm.legalName.trim() || !kycForm.country.trim()) return toast.error('Complete legal name and country.');
+    
     setSaving(true);
     try {
-      await submitKycRequest(user.uid, kycForm.legalName.trim(), kycForm.country.trim(), kycForm.documentType);
-      toast.success('KYC review request submitted');
-      setKycForm({ legalName: '', country: '', documentType: 'passport' });
+      await submitKycRequest(user.uid, {
+        legalName: kycForm.legalName.trim(),
+        country: kycForm.country.trim(),
+        documentType: kycForm.documentType,
+        documentNumber: kycForm.documentNumber.trim(),
+        dob: kycForm.dob,
+        expiryDate: kycForm.expiryDate,
+        documentUrl: kycForm.documentUrl,
+        status: kycForm.verified ? 'verified' : 'pending',
+        notes: kycForm.notes || (kycForm.verified ? 'Auto-verified by Gemini AI' : 'Requires admin compliance review')
+      });
+      toast.success(kycForm.verified ? 'KYC Auto-Verified & Activated!' : 'KYC submitted for compliance review');
+      await refreshUser();
     } catch (error: any) {
       toast.error(error.message || 'KYC request failed');
     } finally {
@@ -305,24 +383,166 @@ export function SettingsPage() {
               </div>
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-xl font-medium text-white mb-2">KYC Readiness</h2>
-                  <p className="text-sm text-text-secondary max-w-md">Submit KYC metadata for admin review. Identity documents should be collected only through a private KYC provider or secure storage workflow.</p>
+                  <h2 className="text-xl font-medium text-white mb-2">AI-Powered KYC Verification</h2>
+                  <p className="text-sm text-text-secondary max-w-md">
+                    Upload your document to instantly verify your identity using Gemini 2.5 Flash AI and Cloudinary.
+                  </p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider bg-gold-500/10 text-gold-500 border border-gold-500/20">
-                  <AlertTriangle className="w-4 h-4" /> {profile?.kycStatus || 'not_started'}
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider ${
+                  profile?.kycStatus === 'verified'
+                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                    : profile?.kycStatus === 'pending'
+                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                    : 'bg-gold-500/10 text-gold-500 border border-gold-500/20'
+                }`}>
+                  <FileCheck className="w-4 h-4" /> {profile?.kycStatus || 'not_started'}
                 </span>
               </div>
-              <form onSubmit={handleKycSubmit} className="bg-dark-900/50 border border-gold-500/10 rounded-xl p-6 space-y-4 max-w-xl">
-                <input value={kycForm.legalName} onChange={(event) => setKycForm((prev) => ({ ...prev, legalName: event.target.value }))} className="input-gold text-sm" placeholder="Legal full name" />
-                <input value={kycForm.country} onChange={(event) => setKycForm((prev) => ({ ...prev, country: event.target.value }))} className="input-gold text-sm" placeholder="Country of residence" />
-                <select value={kycForm.documentType} onChange={(event) => setKycForm((prev) => ({ ...prev, documentType: event.target.value }))} className="input-gold text-sm">
-                  <option value="passport">Passport</option>
-                  <option value="national_id">National ID</option>
-                  <option value="driver_license">Driver license</option>
-                </select>
-                <GoldButton type="submit" disabled={saving} className="h-10 px-6">{saving ? 'Submitting...' : 'Submit for Review'}</GoldButton>
-                <p className="text-xs text-text-muted leading-relaxed">Do not upload document images here. This request only records review metadata and status.</p>
-              </form>
+
+              {profile?.kycStatus === 'verified' ? (
+                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-6 max-w-xl text-center flex flex-col items-center gap-3">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+                  <h3 className="text-white font-medium text-lg">Verification Successful</h3>
+                  <p className="text-text-muted text-xs leading-relaxed max-w-sm">
+                    Your KYC document has been processed and verified by Gemini AI. Your profile details have been successfully synced and your account is fully compliant.
+                  </p>
+                  {profile.kycDocumentUrl && (
+                    <a href={profile.kycDocumentUrl} target="_blank" rel="noreferrer" className="text-xs text-gold-500 hover:underline mt-2">
+                      View Verified Document
+                    </a>
+                  )}
+                </div>
+              ) : uploadingDoc || analyzingDoc ? (
+                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-8 max-w-xl flex flex-col items-center justify-center text-center gap-4 min-h-[250px]">
+                  <Loader2 className="w-10 h-10 text-gold-500 animate-spin" />
+                  <div>
+                    <h3 className="text-white font-medium text-base mb-1">
+                      {uploadingDoc ? 'Uploading Document...' : 'Gemini AI Analyzing...'}
+                    </h3>
+                    <p className="text-text-muted text-xs max-w-xs leading-relaxed">
+                      {uploadingDoc
+                        ? 'Uploading document to secure Cloudinary storage preset...'
+                        : 'Gemini 2.5 Flash is extracting name, document number, country of residence, DOB, and checking authenticity.'}
+                    </p>
+                  </div>
+                </div>
+              ) : !kycForm.documentUrl ? (
+                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-5 max-w-xl">
+                  <div>
+                    <label className="text-xs text-text-muted uppercase tracking-wider block font-medium mb-2">Select ID Document Type</label>
+                    <select
+                      value={kycForm.documentType}
+                      onChange={(event) => setKycForm((prev) => ({ ...prev, documentType: event.target.value }))}
+                      className="input-gold text-sm w-full"
+                    >
+                      <option value="passport">Passport</option>
+                      <option value="national_id">National ID</option>
+                      <option value="driver_license">Driver's License</option>
+                    </select>
+                  </div>
+
+                  <div className="border border-dashed border-gold-500/20 hover:border-gold-500/40 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition relative group bg-dark-900/20">
+                    <input type="file" accept="image/*" onChange={handleDocumentUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    <Upload className="w-8 h-8 text-gold-500/50 group-hover:text-gold-500 transition mb-3" />
+                    <p className="text-white text-sm font-medium mb-1">Upload document image</p>
+                    <p className="text-xs text-text-muted text-center leading-relaxed max-w-xs">
+                      Drag & drop or click to upload. Supports JPG, PNG. Document details will be auto-filled by AI.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleKycSubmit} className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-4 max-w-xl">
+                  <div className="p-3 bg-gold-500/5 border border-gold-500/10 rounded-xl flex items-center justify-between">
+                    <span className="text-xs text-text-secondary">AI Verification Verdict:</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      kycForm.verified
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    }`}>
+                      {kycForm.verified ? 'AI Verified (Pass)' : 'AI Flagged (Review)'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Legal Name (Extracted)</label>
+                      <input
+                        value={kycForm.legalName}
+                        onChange={(event) => setKycForm((prev) => ({ ...prev, legalName: event.target.value }))}
+                        className="input-gold text-sm w-full"
+                        placeholder="Legal full name"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Country of residence</label>
+                      <input
+                        value={kycForm.country}
+                        onChange={(event) => setKycForm((prev) => ({ ...prev, country: event.target.value }))}
+                        className="input-gold text-sm w-full"
+                        placeholder="Country"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Document Number</label>
+                      <input
+                        value={kycForm.documentNumber}
+                        onChange={(event) => setKycForm((prev) => ({ ...prev, documentNumber: event.target.value }))}
+                        className="input-gold text-sm w-full"
+                        placeholder="ID / Passport Number"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Document Type</label>
+                      <select
+                        value={kycForm.documentType}
+                        onChange={(event) => setKycForm((prev) => ({ ...prev, documentType: event.target.value }))}
+                        className="input-gold text-sm w-full"
+                      >
+                        <option value="passport">Passport</option>
+                        <option value="national_id">National ID</option>
+                        <option value="driver_license">Driver's License</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={kycForm.dob}
+                        onChange={(event) => setKycForm((prev) => ({ ...prev, dob: event.target.value }))}
+                        className="input-gold text-sm w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Expiration Date</label>
+                      <input
+                        type="date"
+                        value={kycForm.expiryDate}
+                        onChange={(event) => setKycForm((prev) => ({ ...prev, expiryDate: event.target.value }))}
+                        className="input-gold text-sm w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <GoldButton type="submit" disabled={saving} className="h-10 px-6">
+                      {saving ? 'Saving...' : kycForm.verified ? 'Complete Verification' : 'Submit for Review'}
+                    </GoldButton>
+                    <button
+                      type="button"
+                      onClick={() => setKycForm((prev) => ({ ...prev, documentUrl: '' }))}
+                      className="h-10 px-5 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs font-semibold hover:bg-red-500/10 transition"
+                    >
+                      Reset Upload
+                    </button>
+                  </div>
+                </form>
+              )}
             </GlassCard>
           )}
 

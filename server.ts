@@ -3,7 +3,7 @@ import "dotenv/config";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { createOtp, sanitizeEmailPayload, sendGoldExEmail } from "./src/server/emailService";
-import { generateGoldExAiResponse } from "./src/server/aiService";
+import { generateGoldExAiResponse, analyzeKycDocument } from "./src/server/aiService";
 import { getGoldPriceSnapshot } from "./src/server/marketService";
 import { adminAuth, adminDb } from "./src/server/firebaseAdmin";
 import depositStatusHandler from "./api/deposit-status";
@@ -195,6 +195,17 @@ async function startServer() {
     try {
       const text = await generateGoldExAiResponse(req.body);
       res.json({ text });
+    } catch (error: any) {
+      console.error(error);
+      res.status(error.statusCode || 500).json({ error: error.message });
+    }
+  });
+
+  // AI KYC Analyze endpoint
+  app.post("/api/kyc/analyze", async (req, res) => {
+    try {
+      const result = await analyzeKycDocument(req.body);
+      res.json(result);
     } catch (error: any) {
       console.error(error);
       res.status(error.statusCode || 500).json({ error: error.message });

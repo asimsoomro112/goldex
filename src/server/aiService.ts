@@ -138,3 +138,86 @@ function statusError(message: string, statusCode: number) {
   error.statusCode = statusCode;
   return error;
 }
+
+export async function analyzeKycDocument(body: any) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw statusError("AI API key is not configured.", 500);
+  }
+
+  const { documentUrl, documentType } = body || {};
+  if (!documentUrl) {
+    throw statusError("documentUrl is required.", 400);
+  }
+
+  try {
+    const imgResponse = await fetch(documentUrl);
+    if (!imgResponse.ok) {
+      throw new Error(`Failed to fetch image from Cloudinary: ${imgResponse.statusText}`);
+    }
+    const arrayBuffer = await imgResponse.arrayBuffer();
+    const base64Image = Buffer.from(arrayBuffer).toString("base64");
+    const mimeType = imgResponse.headers.get("content-type") || "image/jpeg";
+
+    const systemPrompt = `You are a professional automated KYC identity verification agent for GoldEx. 
+Your job is to examine the provided identity document (which is claimed to be a ${documentType || 'passport'}).
+Perform the following checks:
+1. Verify if the document looks authentic and is not fake or edited.
+2. Read the legal full name, document number, country of issue, date of birth, and expiry date.
+3. Determine if the document matches the requested type: ${documentType || 'passport'}.
+
+Provide your final assessment as a raw JSON object. Your output must be strictly valid JSON and nothing else. No markdown formatting, no backticks, no comments.
+JSON schema:
+{
+  "legalName": "string or empty",
+  "documentNumber": "string or empty",
+  "country": "string or empty",
+  "dob": "string (YYYY-MM-DD) or empty",
+  "expiryDate": "string (YYYY-MM-DD) or empty",
+  "verified": true or false,
+  "confidenceScore": number from 0 to 100 (rating document legibility and completeness),
+  "notes": "Brief explanation of the decision or reasons for rejection (max 100 chars)"
+}`;
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    // Call Gemini 2.5 Flash
+    let response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              inlineData: {
+                mimeType,
+                data: base64Image,
+              },
+            },
+            {
+              text: "Analyze this document and return JSON matching the specified schema."
+            }
+          ]
+        }
+      ],
+      config: {
+        systemInstruction: systemPrompt,
+      },
+    });
+
+    let text = response.text || "{}";
+    // Clean markdown code blocks if present
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    try {
+      const parsed = JSON.parse(text);
+      return parsed;
+    } catch (parseErr) {
+      console.error("Failed to parse Gemini response as JSON:", text, parseErr);
+      throw new Error("Gemini did not return valid JSON output.");
+    }
+  } catch (err: any) {
+    console.error("KYC analysis error:", err);
+    throw statusError(err.message || "Failed to analyze KYC document.", 500);
+  }
+}

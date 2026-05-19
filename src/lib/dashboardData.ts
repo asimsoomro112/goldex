@@ -42,6 +42,13 @@ export type UserProfile = {
   kycSubmittedAt?: Timestamp;
   kycReviewedAt?: Timestamp;
   kycNotes?: string | null;
+  kycLegalName?: string | null;
+  kycCountry?: string | null;
+  kycDocumentType?: string | null;
+  kycDocumentNumber?: string | null;
+  kycDob?: string | null;
+  kycExpiryDate?: string | null;
+  kycDocumentUrl?: string | null;
   accountStatus?: 'active' | 'deletion_requested' | 'disabled';
   emailVerifiedAt?: Timestamp | null;
   notificationPrefs?: {
@@ -436,12 +443,33 @@ export async function updateUserProfile(uid: string, data: Partial<UserProfile>)
   });
 }
 
-export async function submitKycRequest(uid: string, legalName: string, country: string, documentType: string) {
+export async function submitKycRequest(
+  uid: string, 
+  data: {
+    legalName: string;
+    country: string;
+    documentType: string;
+    documentNumber: string;
+    dob: string;
+    expiryDate: string;
+    documentUrl: string;
+    status: 'verified' | 'pending' | 'rejected';
+    notes?: string | null;
+  }
+) {
   ensureDb();
   const payload = {
-    kycStatus: 'pending' as const,
+    kycStatus: data.status,
     kycSubmittedAt: serverTimestamp(),
-    kycNotes: null,
+    kycReviewedAt: data.status === 'verified' ? serverTimestamp() : null,
+    kycNotes: data.notes || null,
+    kycLegalName: data.legalName,
+    kycCountry: data.country,
+    kycDocumentType: data.documentType,
+    kycDocumentNumber: data.documentNumber,
+    kycDob: data.dob || null,
+    kycExpiryDate: data.expiryDate || null,
+    kycDocumentUrl: data.documentUrl,
     updatedAt: serverTimestamp(),
   };
   await runTransaction(db!, async (transaction) => {
@@ -450,8 +478,17 @@ export async function submitKycRequest(uid: string, legalName: string, country: 
     transaction.set(doc(collection(db!, 'ledgerEntries')), {
       uid,
       type: 'kyc_submitted',
-      status: 'pending',
-      metadata: { legalName, country, documentType },
+      status: data.status === 'verified' ? 'verified' : 'pending',
+      metadata: { 
+        legalName: data.legalName, 
+        country: data.country, 
+        documentType: data.documentType,
+        documentNumber: data.documentNumber,
+        dob: data.dob,
+        expiryDate: data.expiryDate,
+        documentUrl: data.documentUrl,
+        aiVerified: data.status === 'verified'
+      },
       createdAt: serverTimestamp(),
     });
   });

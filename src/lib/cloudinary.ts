@@ -2,10 +2,10 @@ const env = (import.meta as any).env;
 
 export const cloudinaryConfig = {
   cloudName: env.VITE_CLOUDINARY_CLOUD_NAME || 'drmysvfu2',
-  uploadPreset: env.VITE_CLOUDINARY_UPLOAD_PRESET,
+  uploadPreset: env.VITE_CLOUDINARY_UPLOAD_PRESET || 'ml_default',
 };
 
-export const isCloudinaryConfigured = Boolean(cloudinaryConfig.cloudName && cloudinaryConfig.uploadPreset);
+export const isCloudinaryConfigured = true;
 
 export async function uploadToCloudinary(file: File, folder = 'goldex') {
   if (!isCloudinaryConfigured) {
