@@ -80,6 +80,7 @@ export type Deposit = {
   networkConfirmations?: number;
   lastCheckedAt?: Timestamp;
   createdAt?: Timestamp;
+  rejectionReason?: string;
 };
 
 export type Withdrawal = {
@@ -92,6 +93,7 @@ export type Withdrawal = {
   payoutTxHash?: string | null;
   paidAt?: Timestamp;
   createdAt?: Timestamp;
+  rejectionReason?: string;
 };
 
 export type WalletRecord = {

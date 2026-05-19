@@ -187,12 +187,13 @@ function buildEmailTemplate(type: string, name = "Valued Member", data: Record<s
     deposit_rejected: {
       subject: "Deposit Request Rejected — Action Required",
       headline: "Your deposit request was rejected.",
-      body: `Hi ${escHtml(name)}, after manual review, your deposit request for ${amount} could not be verified. This may be due to an incorrect TX hash, insufficient confirmations, or a mismatch in amount.`,
+      body: `Hi ${escHtml(name)}, after manual review, your deposit request for ${amount} could not be verified.`,
       details: [
         { label: "Requested Amount", value: amount },
         { label: "Status", value: "Rejected" },
+        { label: "Reason for Rejection", value: data.rejectionReason || "Transaction hash could not be verified on-chain." },
       ],
-      ctaNote: "Please contact our support team with correct transaction details to resolve this.",
+      ctaNote: "You can re-submit your deposit request with the correct transaction details, or contact our support team for assistance.",
     },
 
     investment_selected: {
@@ -237,12 +238,13 @@ function buildEmailTemplate(type: string, name = "Valued Member", data: Record<s
     withdrawal_rejected: {
       subject: "Withdrawal Rejected — GoldEx",
       headline: "Your withdrawal request was rejected.",
-      body: `Hi ${escHtml(name)}, unfortunately your withdrawal request for ${amount} was rejected during manual review. Common reasons include an invalid wallet address or insufficient profit balance.`,
+      body: `Hi ${escHtml(name)}, unfortunately your withdrawal request for ${amount} was rejected during manual review.`,
       details: [
         { label: "Requested Amount", value: amount },
         { label: "Status", value: "Rejected" },
+        { label: "Reason for Rejection", value: data.rejectionReason || "Incorrect wallet address or account audit issue." },
       ],
-      ctaNote: "Please verify your wallet address and available profit before resubmitting.",
+      ctaNote: "Please check your registered details or contact our support team to resolve this.",
     },
 
     support_reply: {

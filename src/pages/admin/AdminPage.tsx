@@ -202,11 +202,15 @@ export function AdminPage() {
                     }, 'Deposit approved')} className="btn-gold h-9 px-3 text-xs">
                       <CheckCircle2 className="w-4 h-4" /> Approve
                     </button>
-                    <button onClick={() => runAction(async () => {
-                      await rejectDeposit(deposit, adminUser?.uid || 'unknown-admin');
-                      const account = findUser(deposit.uid);
-                      await sendEmail('deposit_rejected', { to: account?.email, name: account?.displayName, data: { amount: deposit.amount } });
-                    }, 'Deposit rejected')} className="btn-ghost h-9 px-3 text-xs text-danger">
+                     <button onClick={() => {
+                       const reason = window.prompt("Enter deposit rejection reason (e.g. Invalid transaction hash, incorrect token, amount mismatch, etc.):");
+                       if (reason === null) return;
+                       runAction(async () => {
+                         await rejectDeposit(deposit, adminUser?.uid || 'unknown-admin', reason);
+                         const account = findUser(deposit.uid);
+                         await sendEmail('deposit_rejected', { to: account?.email, name: account?.displayName, data: { amount: deposit.amount, rejectionReason: reason } });
+                       }, 'Deposit rejected');
+                     }} className="btn-ghost h-9 px-3 text-xs text-danger">
                       <XCircle className="w-4 h-4" /> Reject
                     </button>
                   </div>
@@ -300,11 +304,15 @@ export function AdminPage() {
                       const account = findUser(withdrawal.uid);
                       await sendEmail('withdrawal_paid', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount } });
                     }, 'Withdrawal marked paid')} className="btn-gold h-9 px-3 text-xs">Paid</button>
-                    <button onClick={() => runAction(async () => {
-                      await rejectWithdrawal(withdrawal, adminUser?.uid || 'unknown-admin');
-                      const account = findUser(withdrawal.uid);
-                      await sendEmail('withdrawal_rejected', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount } });
-                    }, 'Withdrawal rejected')} className="btn-ghost h-9 px-3 text-xs text-danger">Reject</button>
+                     <button onClick={() => {
+                       const reason = window.prompt("Enter withdrawal rejection reason (e.g. Wallet address invalid, account check required, etc.):");
+                       if (reason === null) return;
+                       runAction(async () => {
+                         await rejectWithdrawal(withdrawal, adminUser?.uid || 'unknown-admin', reason);
+                         const account = findUser(withdrawal.uid);
+                         await sendEmail('withdrawal_rejected', { to: account?.email, name: account?.displayName, data: { amount: withdrawal.amount, rejectionReason: reason } });
+                       }, 'Withdrawal rejected');
+                     }} className="btn-ghost h-9 px-3 text-xs text-danger">Reject</button>
                   </div>
                 </td>
               </tr>

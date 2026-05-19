@@ -289,7 +289,19 @@ export function InvestPage() {
                       <td className="px-6 py-4 font-mono text-white">${Number(deposit.amount || 0).toFixed(2)}</td>
                       <td className="px-6 py-4 text-text-secondary">{Number(deposit.amount || 0) >= 5000 ? 'Elite' : Number(deposit.amount || 0) >= 500 ? 'Growth' : 'Starter'}</td>
                       <td className="px-6 py-4 text-text-secondary">USDT BEP20</td>
-                      <td className="px-6 py-4"><span className="badge badge-gold">{deposit.status}</span></td>
+                       <td className="px-6 py-4">
+                         <div>
+                           <span className="badge badge-gold">{deposit.status}</span>
+                           {deposit.status === 'rejected' && (
+                             <div className="mt-2 text-[11px] text-[#EF4444] max-w-[220px] leading-relaxed">
+                               <span className="font-semibold">Reason:</span> {deposit.rejectionReason || 'On-chain verification failed.'}
+                               <div className="mt-1.5 font-medium text-gold-500 hover:text-gold-400">
+                                 Please double check your Transaction Hash and submit a new deposit above, or contact our support team.
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       </td>
                       <td className="px-6 py-4">
                         <button type="button" onClick={() => checkDepositStatus(deposit.id, deposit.txHash)} className="btn-ghost h-8 px-3 text-xs rounded-lg" disabled={checkingTx === deposit.id || !deposit.txHash}>
                           {checkingTx === deposit.id ? 'Checking...' : 'Check'}

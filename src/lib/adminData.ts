@@ -183,7 +183,7 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
   });
 }
 
-export async function rejectDeposit(deposit: AdminRecord<Deposit>, actorUid: string) {
+export async function rejectDeposit(deposit: AdminRecord<Deposit>, actorUid: string, rejectionReason?: string) {
   ensureDb();
   await runTransaction(db!, async (transaction) => {
     const depositRef = doc(db!, 'users', deposit.uid, 'deposits', deposit.id);
@@ -200,12 +200,13 @@ export async function rejectDeposit(deposit: AdminRecord<Deposit>, actorUid: str
 
     transaction.update(depositRef, {
       status: 'rejected',
+      rejectionReason: rejectionReason || null,
       updatedAt: serverTimestamp(),
     });
     if (investmentRef && investmentSnapshot?.exists() && investmentSnapshot.data().status === 'pending_deposit') {
       transaction.update(investmentRef, {
-      status: 'stopped',
-      updatedAt: serverTimestamp(),
+        status: 'stopped',
+        updatedAt: serverTimestamp(),
       });
     }
     transaction.set(doc(collection(db!, 'adminAuditLogs')), {
@@ -215,6 +216,7 @@ export async function rejectDeposit(deposit: AdminRecord<Deposit>, actorUid: str
       collection: 'deposits',
       recordId: deposit.id,
       amount: Number(deposit.amount || 0),
+      rejectionReason: rejectionReason || null,
       createdAt: serverTimestamp(),
     });
     transaction.set(doc(collection(db!, 'ledgerEntries')), {
@@ -363,7 +365,7 @@ export async function markWithdrawalPaid(withdrawal: AdminRecord<Withdrawal>, ac
   });
 }
 
-export async function rejectWithdrawal(withdrawal: AdminRecord<Withdrawal>, actorUid: string) {
+export async function rejectWithdrawal(withdrawal: AdminRecord<Withdrawal>, actorUid: string, rejectionReason?: string) {
   ensureDb();
   await runTransaction(db!, async (transaction) => {
     const withdrawalRef = doc(db!, 'users', withdrawal.uid, 'withdrawals', withdrawal.id);
@@ -378,6 +380,7 @@ export async function rejectWithdrawal(withdrawal: AdminRecord<Withdrawal>, acto
 
     transaction.update(withdrawalRef, {
       status: 'rejected',
+      rejectionReason: rejectionReason || null,
       updatedAt: serverTimestamp(),
     });
     transaction.set(doc(collection(db!, 'adminAuditLogs')), {
@@ -387,6 +390,7 @@ export async function rejectWithdrawal(withdrawal: AdminRecord<Withdrawal>, acto
       collection: 'withdrawals',
       recordId: withdrawal.id,
       amount: Number(withdrawal.amount || 0),
+      rejectionReason: rejectionReason || null,
       createdAt: serverTimestamp(),
     });
     transaction.set(doc(collection(db!, 'ledgerEntries')), {

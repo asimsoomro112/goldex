@@ -209,7 +209,19 @@ export function WithdrawPage() {
                       <td className="px-6 py-4 text-white font-mono font-medium">${Number(withdrawal.amount || 0).toFixed(2)}</td>
                       <td className="px-6 py-4 text-text-secondary">USDT BEP20</td>
                       <td className="px-6 py-4 font-mono text-xs text-text-muted">{withdrawal.investmentId || '-'}</td>
-                      <td className="px-6 py-4"><span className="badge badge-gold">{withdrawal.status}</span></td>
+                       <td className="px-6 py-4">
+                         <div>
+                           <span className="badge badge-gold">{withdrawal.status}</span>
+                           {withdrawal.status === 'rejected' && (
+                             <div className="mt-2 text-[11px] text-[#EF4444] max-w-[200px] leading-relaxed">
+                               <span className="font-semibold">Reason:</span> {withdrawal.rejectionReason || 'Incorrect wallet address or audit failed.'}
+                               <div className="mt-1 font-medium text-gold-500 hover:text-gold-400">
+                                 Please verify your details or contact support.
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-text-muted break-all">{withdrawal.payoutTxHash || '-'}</td>
                     </tr>
                   ))}
