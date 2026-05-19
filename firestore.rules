@@ -1,0 +1,301 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && (
+          request.auth.token.admin == true
+          || (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
+          )
+        );
+    }
+
+    function isFinanceAdmin() {
+      return isAdmin()
+        || (
+          signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminRole in ["super_admin", "finance"]
+        );
+    }
+
+    function isComplianceAdmin() {
+      return isAdmin()
+        || (
+          signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminRole in ["super_admin", "compliance"]
+        );
+    }
+
+    function validInvestmentAmount() {
+      return request.resource.data.amount is number
+        && request.resource.data.amount >= 50
+        && request.resource.data.amount % 50 == 0;
+    }
+
+    function optionalString(field) {
+      return !(field in request.resource.data)
+        || request.resource.data[field] == null
+        || request.resource.data[field] is string;
+    }
+
+    function validUserCreate(userId) {
+      return request.resource.data.keys().hasOnly([
+          "uid",
+          "displayName",
+          "email",
+          "photoURL",
+          "referralCode",
+          "referredBy",
+          "role",
+          "kycStatus",
+          "accountStatus",
+          "emailVerifiedAt",
+          "totals",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role == "user"
+        && request.resource.data.displayName is string
+        && request.resource.data.email is string
+        && request.resource.data.referralCode is string
+        && optionalString("photoURL")
+        && optionalString("referredBy")
+        && request.resource.data.kycStatus == "not_started"
+        && request.resource.data.accountStatus == "active"
+        && request.resource.data.totals.lockedPrincipal == 0
+        && request.resource.data.totals.todayProfit == 0
+        && request.resource.data.totals.totalEarned == 0
+        && request.resource.data.totals.withdrawableProfit == 0;
+    }
+
+    function validWalletCreate(userId) {
+      return request.resource.data.keys().hasOnly(["address", "label", "status", "createdAt", "updatedAt"])
+        && isOwner(userId)
+        && request.resource.data.address is string
+        && request.resource.data.label is string
+        && request.resource.data.status == "pending";
+    }
+
+    function validOwnerLedgerCreate(userId) {
+      return signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.type in [
+          "deposit_created",
+          "withdrawal_requested",
+          "kyc_submitted",
+          "wallet_submitted",
+          "account_deletion_requested"
+        ]
+        && request.resource.data.keys().hasOnly(["uid", "type", "amount", "status", "refId", "refPath", "txHash", "metadata", "createdAt"]);
+    }
+
+    function validDepositCreate() {
+      return request.resource.data.keys().hasOnly([
+          "amount",
+          "method",
+          "depositAddress",
+          "investmentId",
+          "txHash",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.method == "usdt_bep20"
+        && request.resource.data.status == "pending"
+        && request.resource.data.depositAddress is string
+        && request.resource.data.investmentId is string
+        && optionalString("txHash")
+        && validInvestmentAmount();
+    }
+
+    function validInvestmentCreate() {
+      return request.resource.data.keys().hasOnly([
+          "amount",
+          "method",
+          "status",
+          "dailyRateMin",
+          "dailyRateMax",
+          "profitAvailable",
+          "profitTotal",
+          "depositAddress",
+          "txHash",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.method == "usdt_bep20"
+        && request.resource.data.status == "pending_deposit"
+        && request.resource.data.dailyRateMin == 0.005
+        && request.resource.data.dailyRateMax == 0.01
+        && request.resource.data.profitAvailable == 0
+        && request.resource.data.profitTotal == 0
+        && request.resource.data.depositAddress is string
+        && optionalString("txHash")
+        && validInvestmentAmount();
+    }
+
+    function validProfitWithdrawal(userId) {
+      return request.resource.data.amount is number
+        && request.resource.data.amount >= 50
+        && request.resource.data.keys().hasOnly([
+          "amount",
+          "walletAddress",
+          "investmentId",
+          "method",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.method == "usdt_bep20"
+        && request.resource.data.status == "pending"
+        && request.resource.data.walletAddress is string
+        && request.resource.data.investmentId is string
+        && request.resource.data.amount <= get(/databases/$(database)/documents/users/$(userId)).data.totals.withdrawableProfit
+        && exists(/databases/$(database)/documents/users/$(userId)/investments/$(request.resource.data.investmentId))
+        && get(/databases/$(database)/documents/users/$(userId)/investments/$(request.resource.data.investmentId)).data.status == "active"
+        && request.resource.data.amount <= get(/databases/$(database)/documents/users/$(userId)/investments/$(request.resource.data.investmentId)).data.profitAvailable;
+    }
+
+    function validSupportCreate() {
+      return request.resource.data.keys().hasOnly([
+          "uid",
+          "name",
+          "email",
+          "subject",
+          "message",
+          "status",
+          "replies",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.email is string
+        && request.resource.data.subject is string
+        && request.resource.data.message is string
+        && request.resource.data.status == "open"
+        && request.resource.data.replies is list
+        && request.resource.data.replies.size() == 0;
+    }
+
+    function validOwnerSupportUpdate() {
+      return signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.subject == resource.data.subject
+        && request.resource.data.message == resource.data.message
+        && request.resource.data.status == "open"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["replies", "status", "updatedAt"])
+        && request.resource.data.replies is list
+        && request.resource.data.replies.size() == resource.data.replies.size() + 1
+        && request.resource.data.replies[request.resource.data.replies.size() - 1].sender == "user"
+        && request.resource.data.replies[request.resource.data.replies.size() - 1].message is string;
+    }
+
+    match /adminAuditLogs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /supportTickets/{ticketId} {
+      allow create: if signedIn() && validSupportCreate();
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || validOwnerSupportUpdate();
+      allow delete: if isAdmin();
+    }
+
+    // Required for admin collectionGroup() queries in the admin dashboard.
+    match /{path=**}/deposits/{depositId} {
+      allow read: if isAdmin();
+    }
+
+    match /{path=**}/investments/{investmentId} {
+      allow read: if isAdmin();
+    }
+
+    match /{path=**}/withdrawals/{withdrawalId} {
+      allow read: if isAdmin();
+    }
+
+    match /{path=**}/wallets/{walletId} {
+      allow read: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow create: if isOwner(userId)
+        && validUserCreate(userId);
+
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["displayName", "photoURL", "phone", "notificationPrefs", "kycStatus", "kycSubmittedAt", "kycNotes", "accountStatus", "deletionRequestedAt", "updatedAt"])
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.totals == resource.data.totals
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["kycStatus"])
+          || request.resource.data.kycStatus in ["not_started", "pending"]
+        )
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["accountStatus"])
+          || request.resource.data.accountStatus in ["active", "deletion_requested"]
+        );
+
+      allow update, delete: if isAdmin();
+
+      match /deposits/{depositId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && validDepositCreate();
+        allow update, delete: if isAdmin();
+      }
+
+      match /investments/{investmentId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && validInvestmentCreate();
+        allow update, delete: if isAdmin();
+      }
+
+      match /withdrawals/{withdrawalId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && validProfitWithdrawal(userId);
+        allow update, delete: if isAdmin();
+      }
+
+      match /wallets/{walletId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if validWalletCreate(userId);
+        allow update, delete: if isComplianceAdmin();
+      }
+    }
+
+    match /ledgerEntries/{entryId} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAdmin() || validOwnerLedgerCreate(request.auth.uid);
+      allow update, delete: if false;
+    }
+
+    match /adminApprovalRequests/{requestId} {
+      allow read: if isAdmin();
+      allow create: if isFinanceAdmin();
+      allow update: if isFinanceAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "reviewedBy", "reviewedAt"])
+        && resource.data.status == "pending"
+        && request.resource.data.requestedBy != request.auth.uid;
+      allow delete: if false;
+    }
+  }
+}

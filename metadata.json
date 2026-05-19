@@ -1,0 +1,6 @@
+{
+  "name": "GoldEx",
+  "description": "Premium AI-powered Gold trading bot platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
