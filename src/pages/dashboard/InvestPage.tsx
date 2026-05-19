@@ -215,16 +215,39 @@ export function InvestPage() {
               </h2>
             </div>
             <div className="p-6">
-              <div className="rounded-xl border border-gold-500/10 bg-dark-900/40 p-8 text-center text-text-muted relative overflow-hidden min-h-[160px] flex items-center justify-center">
-                {investments.length === 0 ? (
-                  <>
-                    <div className="flex flex-col items-center justify-center gap-4 relative z-10"><img src="/images/Empty Investments.png" alt="No Investments" className="w-28 h-28 object-contain opacity-75 drop-shadow-[0_0_20px_rgba(212,175,55,0.25)]" />
-                    <p>No live active portfolios. Verified investments will show locked principal, daily profit range, and withdrawal status here.</p></div>
-                  </>
-                ) : (
-                  <p className="relative z-10">{investments.length} investment record(s) found.</p>
-                )}
-              </div>
+              {investments.length === 0 ? (
+                <div className="rounded-xl border border-gold-500/10 bg-dark-900/40 p-8 text-center text-text-muted relative overflow-hidden min-h-[160px] flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-4 relative z-10">
+                    <img src="/images/Empty Investments.png" alt="No Investments" className="w-28 h-28 object-contain opacity-75 drop-shadow-[0_0_20px_rgba(212,175,55,0.25)]" />
+                    <p>No live active portfolios. Verified investments will show locked principal, daily profit range, and withdrawal status here.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto w-full border border-gold-500/10 rounded-xl bg-dark-900/20">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-[11px] uppercase tracking-wider text-text-muted bg-dark-900/50 font-sans">
+                      <tr>
+                        <th className="px-6 py-4 font-medium">Plan</th>
+                        <th className="px-6 py-4 font-medium">Locked</th>
+                        <th className="px-6 py-4 font-medium">Rate</th>
+                        <th className="px-6 py-4 font-medium">Daily Profit</th>
+                        <th className="px-6 py-4 font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {investments.map((investment) => (
+                        <tr key={investment.id} className="border-b border-gold-500/5 hover:bg-[#11111F]/50 transition-colors">
+                          <td className="px-6 py-4 font-medium font-sans text-white">{investment.amount >= 5000 ? 'Elite' : investment.amount >= 500 ? 'Growth' : 'Starter'}</td>
+                          <td className="px-6 py-4 font-mono text-gold-500">${Number(investment.amount || 0).toFixed(2)}</td>
+                          <td className="px-6 py-4 font-mono text-[#E8E4D4]/60">0.5% - 1%</td>
+                          <td className="px-6 py-4 font-mono text-profit-green">${Number(investment.profitAvailable || 0).toFixed(2)}</td>
+                          <td className="px-6 py-4"><span className="badge badge-gold">{investment.status.replace(/_/g, ' ')}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </GlassCard>
 
