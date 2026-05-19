@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { adminAuth, adminDb } from "../_services/firebaseAdmin.js";
 import { createOtp, sendGoldExEmail } from "../_services/emailService.js";
 

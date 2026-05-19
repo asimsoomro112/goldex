@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { adminDb } from "../_services/firebaseAdmin.js";
 
 export default async function handler(req: any, res: any) {

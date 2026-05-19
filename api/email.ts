@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { sanitizeEmailPayload, sendGoldExEmail } from "./_services/emailService.js";
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
