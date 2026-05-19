@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Navigate, Outlet, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Routes, Route, Link } from 'react-router-dom';
 
 // Public Layout Components
 import { MainLayout } from './layouts/MainLayout';
