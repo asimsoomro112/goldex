@@ -27,7 +27,7 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<User>;
-  loginWithGoogle: () => Promise<User>;
+  loginWithGoogle: (referral?: string) => Promise<User>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
@@ -68,11 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await sendEmailVerification(credential.user);
       return credential.user;
     },
-    async loginWithGoogle() {
+    async loginWithGoogle(referral?: string) {
       ensureFirebase();
       try {
         const credential = await signInWithPopup(auth!, googleProvider);
-        await ensureUserDocument(credential.user, credential.user.displayName || 'Account');
+        await ensureUserDocument(credential.user, credential.user.displayName || 'Account', referral);
         return credential.user;
       } catch (error: any) {
         console.error('Google Auth Error:', error);
@@ -140,6 +140,9 @@ async function ensureUserDocument(user: User, name: string, referral?: string) {
     photoURL: user.photoURL || null,
     referralCode: createReferralCode(user.uid),
     referredBy: referral?.trim().toUpperCase() || null,
+    referralStatus: referral?.trim() ? 'pending' : null,
+    referralCommissionPaid: 0,
+    refereeBonusPaid: 0,
     role: 'user',
     kycStatus: 'not_started',
     accountStatus: 'active',

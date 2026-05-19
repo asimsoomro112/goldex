@@ -34,6 +34,9 @@ export type UserProfile = {
   adminRole?: 'super_admin' | 'finance' | 'compliance' | 'support' | null;
   referralCode?: string | null;
   referredBy?: string | null;
+  referralStatus?: 'pending' | 'completed' | null;
+  referralCommissionPaid?: number;
+  refereeBonusPaid?: number;
   phone?: string | null;
   kycStatus?: 'not_started' | 'pending' | 'verified' | 'rejected';
   kycSubmittedAt?: Timestamp;
@@ -692,4 +695,36 @@ export async function addTicketReply(ticketId: string, sender: 'user' | 'admin',
       status: sender === 'user' ? 'open' : 'resolved',
     });
   });
+}
+
+export function useReferredUsers(referralCode?: string | null) {
+  const [referredUsers, setReferredUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!referralCode || !db) {
+      setReferredUsers([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const q = query(
+      collection(db, 'users'),
+      where('referredBy', '==', referralCode),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const users = snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() } as UserProfile));
+      setReferredUsers(users);
+      setLoading(false);
+    }, (error) => {
+      console.error('Referred users listener failed:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [referralCode]);
+
+  return { referredUsers, loading };
 }

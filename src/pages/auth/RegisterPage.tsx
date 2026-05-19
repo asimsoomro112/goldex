@@ -41,7 +41,7 @@ export function RegisterPage() {
   const handleGoogleSignup = async () => {
     setSubmitting(true);
     try {
-      const googleUser = await loginWithGoogle();
+      const googleUser = await loginWithGoogle(referral);
       await sendEmail('registration', { to: googleUser.email, name: googleUser.displayName || 'Google user' });
       toast.success('Account ready!');
       navigate('/dashboard');

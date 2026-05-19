@@ -13,6 +13,9 @@ import {
   writeBatch,
   getDocs,
   where,
+  getDoc,
+  limit,
+  DocumentReference,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Deposit, Investment, UserProfile, WalletRecord, Withdrawal, SupportTicket } from './dashboardData';
@@ -131,6 +134,25 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
     throw new Error('Deposit amount is invalid.');
   }
 
+  let referrerRef: DocumentReference | null = null;
+  let userSnapshotData: any = null;
+
+  try {
+    const userDoc = await getDoc(doc(db!, 'users', deposit.uid));
+    if (userDoc.exists()) {
+      userSnapshotData = userDoc.data();
+      if (userSnapshotData.referredBy && userSnapshotData.referralStatus === 'pending') {
+        const q = query(collection(db!, 'users'), where('referralCode', '==', userSnapshotData.referredBy), limit(1));
+        const qSnapshot = await getDocs(q);
+        if (!qSnapshot.empty) {
+          referrerRef = qSnapshot.docs[0].ref;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to resolve referrer details:', err);
+  }
+
   await runTransaction(db!, async (transaction) => {
     const userRef = doc(db!, 'users', deposit.uid);
     const depositRef = doc(db!, 'users', deposit.uid, 'deposits', deposit.id);
@@ -164,6 +186,66 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
       'totals.lockedPrincipal': increment(amount),
       updatedAt: serverTimestamp(),
     });
+
+    // Check and process referral commissions
+    if (referrerRef && userSnapshotData) {
+      const referrerSnapshot = await transaction.get(referrerRef);
+      if (referrerSnapshot.exists()) {
+        const commAmount = Math.floor(amount / 50) * 10;
+        const bonusAmount = Math.floor(amount / 50) * 5;
+
+        if (commAmount > 0) {
+          // Credit referrer
+          transaction.update(referrerRef, {
+            'totals.withdrawableProfit': increment(commAmount),
+            'totals.totalEarned': increment(commAmount),
+            updatedAt: serverTimestamp(),
+          });
+          transaction.set(doc(collection(db!, 'ledgerEntries')), {
+            uid: referrerRef.id,
+            type: 'referral_commission',
+            amount: commAmount,
+            status: 'verified',
+            refId: deposit.id,
+            refPath: `users/${deposit.uid}/deposits/${deposit.id}`,
+            description: `Referral commission from ${userSnapshotData.displayName || 'referred user'} (First investment of $${amount})`,
+            createdAt: serverTimestamp(),
+          });
+
+          // Credit referee (the referred user)
+          transaction.update(userRef, {
+            referralStatus: 'completed',
+            referralCommissionPaid: commAmount,
+            refereeBonusPaid: bonusAmount,
+            'totals.withdrawableProfit': increment(bonusAmount),
+            'totals.totalEarned': increment(bonusAmount),
+            updatedAt: serverTimestamp(),
+          });
+          transaction.set(doc(collection(db!, 'ledgerEntries')), {
+            uid: deposit.uid,
+            type: 'referee_bonus',
+            amount: bonusAmount,
+            status: 'verified',
+            refId: deposit.id,
+            refPath: `users/${deposit.uid}/deposits/${deposit.id}`,
+            description: `Welcome bonus for signing up via referral (First investment of $${amount})`,
+            createdAt: serverTimestamp(),
+          });
+
+          // Audit log for referral commission processing
+          transaction.set(doc(collection(db!, 'adminAuditLogs')), {
+            actorUid,
+            targetUid: deposit.uid,
+            action: 'referral_bonus_processed',
+            collection: 'users',
+            recordId: deposit.uid,
+            amount: commAmount + bonusAmount,
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
+    }
+
     transaction.set(doc(collection(db!, 'adminAuditLogs')), {
       actorUid,
       targetUid: deposit.uid,
