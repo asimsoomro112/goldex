@@ -59,6 +59,9 @@ service cloud.firestore {
           "photoURL",
           "referralCode",
           "referredBy",
+          "referralStatus",
+          "referralCommissionPaid",
+          "refereeBonusPaid",
           "role",
           "kycStatus",
           "accountStatus",
@@ -74,6 +77,19 @@ service cloud.firestore {
         && request.resource.data.referralCode is string
         && optionalString("photoURL")
         && optionalString("referredBy")
+        && (
+          !("referralStatus" in request.resource.data)
+          || request.resource.data.referralStatus == null
+          || request.resource.data.referralStatus == "pending"
+        )
+        && (
+          !("referralCommissionPaid" in request.resource.data)
+          || request.resource.data.referralCommissionPaid == 0
+        )
+        && (
+          !("refereeBonusPaid" in request.resource.data)
+          || request.resource.data.refereeBonusPaid == 0
+        )
         && request.resource.data.kycStatus == "not_started"
         && request.resource.data.accountStatus == "active"
         && request.resource.data.totals.lockedPrincipal == 0
@@ -103,23 +119,32 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(["uid", "type", "amount", "status", "refId", "refPath", "txHash", "metadata", "createdAt"]);
     }
 
-    function validDepositCreate() {
+    function validDepositCreate(userId, depositId) {
       return request.resource.data.keys().hasOnly([
-          "amount",
-          "method",
+           "amount",
+           "method",
           "depositAddress",
           "investmentId",
           "txHash",
           "status",
           "createdAt",
           "updatedAt"
-        ])
-        && request.resource.data.method == "usdt_bep20"
-        && request.resource.data.status == "pending"
-        && request.resource.data.depositAddress is string
-        && request.resource.data.investmentId is string
-        && optionalString("txHash")
-        && validInvestmentAmount();
+         ])
+         && request.resource.data.method == "usdt_bep20"
+         && request.resource.data.status == "pending"
+         && request.resource.data.depositAddress is string
+         && request.resource.data.investmentId is string
+         && request.resource.data.txHash is string
+         && request.resource.data.txHash.matches("^0x[a-fA-F0-9]{64}$")
+         && (
+           !exists(/databases/$(database)/documents/depositTxHashes/$(request.resource.data.txHash))
+           || (
+             existsAfter(/databases/$(database)/documents/depositTxHashes/$(request.resource.data.txHash))
+             && getAfter(/databases/$(database)/documents/depositTxHashes/$(request.resource.data.txHash)).data.uid == userId
+             && getAfter(/databases/$(database)/documents/depositTxHashes/$(request.resource.data.txHash)).data.refPath == "users/" + userId + "/deposits/" + depositId
+           )
+         )
+         && validInvestmentAmount();
     }
 
     function validInvestmentCreate() {
@@ -155,11 +180,18 @@ service cloud.firestore {
           "walletAddress",
           "investmentId",
           "method",
+          "type",
+          "speed",
+          "fee",
           "status",
           "createdAt",
           "updatedAt"
         ])
         && request.resource.data.method == "usdt_bep20"
+        && request.resource.data.type == "standard"
+        && request.resource.data.speed in ["standard", "express"]
+        && request.resource.data.fee is number
+        && request.resource.data.fee >= 0
         && request.resource.data.status == "pending"
         && request.resource.data.walletAddress is string
         && request.resource.data.investmentId is string
@@ -219,6 +251,23 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /depositTxHashes/{txHash} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/depositTxHashes/$(txHash))
+        && request.resource.data.keys().hasOnly(["uid", "txHash", "amount", "status", "refPath", "createdAt", "updatedAt"])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.txHash == txHash
+        && txHash.matches("^0x[a-fA-F0-9]{64}$")
+        && request.resource.data.amount is number
+        && request.resource.data.amount >= 50
+        && request.resource.data.amount % 50 == 0
+        && request.resource.data.status == "pending"
+        && request.resource.data.refPath is string;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
     // Required for admin collectionGroup() queries in the admin dashboard.
     match /{path=**}/deposits/{depositId} {
       allow read: if isAdmin();
@@ -265,7 +314,7 @@ service cloud.firestore {
 
       match /deposits/{depositId} {
         allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && validDepositCreate();
+        allow create: if isOwner(userId) && validDepositCreate(userId, depositId);
         allow update, delete: if isAdmin();
       }
 

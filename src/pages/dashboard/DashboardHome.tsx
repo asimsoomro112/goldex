@@ -307,10 +307,12 @@ export function DashboardHome() {
                           <Tooltip 
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
+                                const point = payload[0];
+                                const value = Number(point?.value || 0);
                                 return (
                                   <div className="bg-dark-950/95 border border-gold-500/30 rounded-lg p-3 shadow-xl backdrop-blur-md">
-                                    <p className="text-[10px] uppercase text-[#E8E4D4]/45 tracking-wider font-sans mb-1">{payload[0].payload.date}</p>
-                                    <p className="font-mono text-sm font-bold text-gold-500">${payload[0].value.toFixed(2)}</p>
+                                    <p className="text-[10px] uppercase text-[#E8E4D4]/45 tracking-wider font-sans mb-1">{point?.payload?.date}</p>
+                                    <p className="font-mono text-sm font-bold text-gold-500">${value.toFixed(2)}</p>
                                   </div>
                                 );
                               }

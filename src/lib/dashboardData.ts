@@ -49,8 +49,12 @@ export type UserProfile = {
   kycDob?: string | null;
   kycExpiryDate?: string | null;
   kycDocumentUrl?: string | null;
+  kycBackDocumentUrl?: string | null;
   accountStatus?: 'active' | 'deletion_requested' | 'disabled';
+  deletionRequestedAt?: Timestamp;
   emailVerifiedAt?: Timestamp | null;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
   notificationPrefs?: {
     profit?: boolean;
     referral?: boolean;
@@ -71,7 +75,7 @@ export type Investment = {
   id: string;
   amount: number;
   method: 'usdt_bep20';
-  status: 'pending_deposit' | 'active' | 'withdrawn' | 'stopped';
+  status: 'pending_deposit' | 'active' | 'pending_settlement' | 'settled' | 'withdrawn' | 'stopped';
   dailyRateMin: number;
   dailyRateMax: number;
   profitAvailable: number;
@@ -97,12 +101,16 @@ export type Withdrawal = {
   id: string;
   amount: number;
   method: 'usdt_bep20';
+  type?: 'standard' | 'settlement';
+  speed?: 'standard' | 'express';
+  fee?: number;
   status: 'pending' | 'paid' | 'rejected';
   walletAddress: string;
   investmentId?: string | null;
   payoutTxHash?: string | null;
   paidAt?: Timestamp;
   createdAt?: Timestamp;
+  updatedAt?: Timestamp;
   rejectionReason?: string;
 };
 
@@ -119,7 +127,7 @@ export type WalletRecord = {
 export type LedgerEntry = {
   id: string;
   uid: string;
-  type: 'deposit_created' | 'deposit_approved' | 'deposit_rejected' | 'profit_added' | 'withdrawal_requested' | 'withdrawal_paid' | 'withdrawal_rejected' | 'kyc_submitted' | 'wallet_submitted' | 'account_deletion_requested';
+  type: 'deposit_created' | 'deposit_approved' | 'deposit_rejected' | 'profit_added' | 'withdrawal_requested' | 'withdrawal_paid' | 'withdrawal_rejected' | 'kyc_submitted' | 'wallet_submitted' | 'account_deletion_requested' | 'referral_commission' | 'referral_profit_commission' | 'referee_bonus' | 'reinvestment' | 'settlement_requested' | 'settlement_paid' | 'settlement_rejected';
   amount?: number;
   status?: string;
   refId?: string;
@@ -205,16 +213,21 @@ export async function createDepositRequest(uid: string, amount: number, txHash?:
   if (!Number.isFinite(amount) || amount < MIN_INVESTMENT || amount % MIN_INVESTMENT !== 0) {
     throw new Error('Investment amount must be $50 or a $50 multiple.');
   }
+  const normalizedTxHash = txHash?.trim().toLowerCase() || '';
+  if (!/^0x[a-f0-9]{64}$/.test(normalizedTxHash)) {
+    throw new Error('A valid BEP20 transaction hash is required.');
+  }
 
   const investmentRef = doc(collection(db!, 'users', uid, 'investments'));
   const depositRef = doc(collection(db!, 'users', uid, 'deposits'));
+  const txHashRef = doc(db!, 'depositTxHashes', normalizedTxHash);
   const batch = writeBatch(db!);
   const payload = {
     amount,
     method: 'usdt_bep20',
     depositAddress: USDT_BEP20_ADDRESS,
     investmentId: investmentRef.id,
-    txHash: txHash || null,
+    txHash: normalizedTxHash,
     status: 'pending',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -230,7 +243,16 @@ export async function createDepositRequest(uid: string, amount: number, txHash?:
     profitAvailable: 0,
     profitTotal: 0,
     depositAddress: USDT_BEP20_ADDRESS,
-    txHash: txHash || null,
+    txHash: normalizedTxHash,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  batch.set(txHashRef, {
+    uid,
+    txHash: normalizedTxHash,
+    amount,
+    status: 'pending',
+    refPath: `users/${uid}/deposits/${depositRef.id}`,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -241,7 +263,7 @@ export async function createDepositRequest(uid: string, amount: number, txHash?:
     status: 'pending',
     refId: depositRef.id,
     refPath: `users/${uid}/deposits/${depositRef.id}`,
-    txHash: txHash || null,
+    txHash: normalizedTxHash,
     createdAt: serverTimestamp(),
   });
   await batch.commit();

@@ -160,6 +160,7 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
     const depositSnapshot = await transaction.get(depositRef);
     const investmentSnapshot = await transaction.get(investmentRef);
     const userSnapshot = await transaction.get(userRef);
+    const referrerSnapshot = referrerRef ? await transaction.get(referrerRef) : null;
 
     if (!depositSnapshot.exists()) {
       throw new Error('Deposit record no longer exists.');
@@ -178,6 +179,8 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
     }
 
     const currentUserData = userSnapshot.data();
+    const normalizedTxHash = typeof depositSnapshot.data().txHash === 'string' ? depositSnapshot.data().txHash.toLowerCase() : '';
+    const txHashRef = normalizedTxHash ? doc(db!, 'depositTxHashes', normalizedTxHash) : null;
 
     transaction.update(depositRef, {
       status: 'verified',
@@ -192,11 +195,21 @@ export async function approveDeposit(deposit: AdminRecord<Deposit>, actorUid: st
       'totals.lockedPrincipal': increment(amount),
       updatedAt: serverTimestamp(),
     });
+    if (txHashRef) {
+      transaction.set(txHashRef, {
+        uid: deposit.uid,
+        txHash: normalizedTxHash,
+        amount,
+        status: 'verified',
+        refPath: `users/${deposit.uid}/deposits/${deposit.id}`,
+        verifiedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }
 
     // Check and process referral commissions (strictly one-time check)
     if (referrerRef && currentUserData && currentUserData.referralStatus === 'pending') {
-      const referrerSnapshot = await transaction.get(referrerRef);
-      if (referrerSnapshot.exists()) {
+      if (referrerSnapshot?.exists()) {
         const commAmount = Math.floor(amount / 50) * 10;
         const bonusAmount = Math.floor(amount / 50) * 5;
 
@@ -287,12 +300,25 @@ export async function rejectDeposit(deposit: AdminRecord<Deposit>, actorUid: str
     if (depositSnapshot.data().status !== 'pending') {
       throw new Error('Deposit is no longer pending.');
     }
+    const normalizedTxHash = typeof depositSnapshot.data().txHash === 'string' ? depositSnapshot.data().txHash.toLowerCase() : '';
+    const txHashRef = normalizedTxHash ? doc(db!, 'depositTxHashes', normalizedTxHash) : null;
 
     transaction.update(depositRef, {
       status: 'rejected',
       rejectionReason: rejectionReason || null,
       updatedAt: serverTimestamp(),
     });
+    if (txHashRef) {
+      transaction.set(txHashRef, {
+        uid: deposit.uid,
+        txHash: normalizedTxHash,
+        amount: Number(deposit.amount || 0),
+        status: 'rejected',
+        refPath: `users/${deposit.uid}/deposits/${deposit.id}`,
+        rejectionReason: rejectionReason || null,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }
     if (investmentRef && investmentSnapshot?.exists() && investmentSnapshot.data().status === 'pending_deposit') {
       transaction.update(investmentRef, {
         status: 'stopped',
