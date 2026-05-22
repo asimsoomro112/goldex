@@ -163,13 +163,35 @@ service cloud.firestore {
         ])
         && request.resource.data.method == "usdt_bep20"
         && request.resource.data.status == "pending_deposit"
-        && request.resource.data.dailyRateMin == 0.005
-        && request.resource.data.dailyRateMax == 0.01
+        && validTierRates()
         && request.resource.data.profitAvailable == 0
         && request.resource.data.profitTotal == 0
         && request.resource.data.depositAddress is string
         && optionalString("txHash")
         && validInvestmentAmount();
+    }
+
+    // Progressive tier rate validation:
+    // Starter  ($50-$499):   0.5% - 1.0%
+    // Growth   ($500-$4999): 1.0% - 1.2%
+    // Elite    ($5000+):     1.2% - 1.5%
+    function validTierRates() {
+      return (
+        // Starter tier
+        (request.resource.data.amount < 500
+          && request.resource.data.dailyRateMin == 0.005
+          && request.resource.data.dailyRateMax == 0.01)
+        ||
+        // Growth tier
+        (request.resource.data.amount >= 500 && request.resource.data.amount < 5000
+          && request.resource.data.dailyRateMin == 0.01
+          && request.resource.data.dailyRateMax == 0.012)
+        ||
+        // Elite tier
+        (request.resource.data.amount >= 5000
+          && request.resource.data.dailyRateMin == 0.012
+          && request.resource.data.dailyRateMax == 0.015)
+      );
     }
 
     function validProfitWithdrawal(userId) {
@@ -289,11 +311,13 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && validUserCreate(userId);
 
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId)
+        || isAdmin()
+        || (signedIn() && resource.data.referredBy == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.referralCode);
 
       allow update: if isOwner(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "displayName", "photoURL", "phone", "notificationPrefs", 
+          "displayName", "photoURL", "phone", "notificationPrefs", "onboardingComplete",
           "kycStatus", "kycSubmittedAt", "kycReviewedAt", "kycNotes", 
           "kycLegalName", "kycCountry", "kycDocumentType", "kycDocumentNumber", 
           "kycDob", "kycExpiryDate", "kycDocumentUrl", "kycBackDocumentUrl",
@@ -303,7 +327,10 @@ service cloud.firestore {
         && request.resource.data.totals == resource.data.totals
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(["kycStatus"])
-          || request.resource.data.kycStatus in ["not_started", "pending", "verified"]
+          || (
+            request.resource.data.kycStatus == "pending"
+            && resource.data.kycStatus in ["not_started", "rejected"]
+          )
         )
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(["accountStatus"])
@@ -326,7 +353,9 @@ service cloud.firestore {
 
       match /withdrawals/{withdrawalId} {
         allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && validProfitWithdrawal(userId);
+        // Withdrawal requests must go through /api/withdraw so approved wallet and
+        // pending-balance checks run on the server.
+        allow create: if false;
         allow update, delete: if isAdmin();
       }
 

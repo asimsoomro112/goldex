@@ -1,7 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { GoldButton } from '@/components/ui/GoldButton';
-import { User, Shield, Bell, FileCheck, AlertTriangle, LogOut, WalletCards, Database, MailCheck, Trash2, Download, Upload, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { 
+  User, 
+  Shield, 
+  Bell, 
+  FileCheck, 
+  AlertTriangle, 
+  LogOut, 
+  WalletCards, 
+  Database, 
+  MailCheck, 
+  Trash2, 
+  Download, 
+  Upload, 
+  Loader2, 
+  CheckCircle2, 
+  XCircle,
+  Key,
+  ShieldAlert,
+  Smartphone,
+  Eye,
+  Trash
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -17,6 +36,7 @@ import {
   useWalletWhitelist,
 } from '@/lib/dashboardData';
 import { sendEmail } from '@/lib/email';
+import { Card, Badge, Button } from '@/components/ui';
 
 const compressImageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -100,12 +120,12 @@ export function SettingsPage() {
   }, [profile, user]);
 
   const navItems = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'kyc', label: 'KYC Status', icon: FileCheck },
-    { id: 'wallets', label: 'Wallets', icon: WalletCards },
-    { id: 'data', label: 'Data', icon: Database },
+    { id: 'profile', label: 'Profile Settings', icon: User },
+    { id: 'security', label: 'Security & Access', icon: Shield },
+    { id: 'notifications', label: 'Alert Preferences', icon: Bell },
+    { id: 'kyc', label: 'Identity KYC', icon: FileCheck },
+    { id: 'wallets', label: 'USDT Whitelist', icon: WalletCards },
+    { id: 'data', label: 'Data Management', icon: Database },
   ];
 
   const handleProfileSave = async (e: React.FormEvent) => {
@@ -114,7 +134,7 @@ export function SettingsPage() {
     setSaving(true);
     try {
       await updateUserProfile(user.uid, { displayName: displayName.trim(), phone: phone.trim() || null });
-      toast.success('Profile updated');
+      toast.success('Profile updated successfully!');
     } catch (error: any) {
       toast.error(error.message || 'Profile update failed');
     } finally {
@@ -139,8 +159,12 @@ export function SettingsPage() {
     if (!user?.email) return toast.error('No email is attached to this account.');
     try {
       await resetPassword(user.email);
-      await sendEmail('password_reset', { to: user.email, name: profile?.displayName || user.displayName || user.email });
-      toast.success('Password reset email sent');
+      try {
+        await sendEmail('password_reset', { to: user.email, name: profile?.displayName || user.displayName || user.email });
+      } catch (emailErr) {
+        console.warn('Reset email dispatch failed:', emailErr);
+      }
+      toast.success('Password reset link sent to your email.');
     } catch (error: any) {
       toast.error(error.message || 'Could not send reset email');
     }
@@ -149,7 +173,7 @@ export function SettingsPage() {
   const handleEmailVerification = async () => {
     try {
       await sendVerificationEmail();
-      toast.success('Verification email sent');
+      toast.success('Verification link dispatched.');
     } catch (error: any) {
       toast.error(error.message || 'Could not send verification email');
     }
@@ -157,7 +181,7 @@ export function SettingsPage() {
 
   const handleRefreshUser = async () => {
     await refreshUser();
-    toast.success('Account status refreshed');
+    toast.success('Account status synchronized with Firebase.');
   };
 
   const handleDocumentUpload = async (side: 'front' | 'back', event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,16 +192,14 @@ export function SettingsPage() {
     try {
       let resultUrl = '';
       try {
-        // Attempt Cloudinary upload first
         const upload = await uploadToCloudinary(file, `goldex/kyc/${user.uid}`);
         resultUrl = upload.secure_url;
-        toast.success(`${side === 'front' ? 'Front' : 'Back'} side uploaded to Cloudinary.`);
+        toast.success(`${side === 'front' ? 'Front' : 'Back'} side uploaded.`);
       } catch (cloudinaryErr: any) {
-        console.warn('Cloudinary upload failed, using secure base64 compression fallback:', cloudinaryErr);
-        // Fall back to client-side compressed base64 string
+        console.warn('Cloudinary failed, falling back to base64 encoding:', cloudinaryErr);
         const base64 = await compressImageToBase64(file);
         resultUrl = base64;
-        toast.success(`${side === 'front' ? 'Front' : 'Back'} side processed (offline fallback).`);
+        toast.success(`${side === 'front' ? 'Front' : 'Back'} side processed locally.`);
       }
 
       setKycForm(prev => ({
@@ -233,7 +255,7 @@ export function SettingsPage() {
       if (result.verified) {
         toast.success('Gemini AI successfully verified both sides of your document!');
       } else {
-        toast.error('AI was unable to verify automatically. Please correct details manually.');
+        toast.error('AI verification failed. Please check fields manually.');
       }
     } catch (error: any) {
       toast.error(error.message || 'AI document processing failed');
@@ -245,9 +267,9 @@ export function SettingsPage() {
   const handleKycSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!user) return;
-    if (!kycForm.documentUrl) return toast.error('Please upload the front side of your document first.');
-    if (kycForm.documentType !== 'passport' && !kycForm.backDocumentUrl) return toast.error('Please upload the back side of your document first.');
-    if (!kycForm.legalName.trim() || !kycForm.country.trim()) return toast.error('Complete legal name and country.');
+    if (!kycForm.documentUrl) return toast.error('Please upload the front side of your document.');
+    if (kycForm.documentType !== 'passport' && !kycForm.backDocumentUrl) return toast.error('Please upload the back side of your document.');
+    if (!kycForm.legalName.trim() || !kycForm.country.trim()) return toast.error('Legal name and country are required.');
     
     setSaving(true);
     try {
@@ -263,7 +285,7 @@ export function SettingsPage() {
         status: kycForm.verified ? 'verified' : 'pending',
         notes: kycForm.notes || (kycForm.verified ? 'Auto-verified by Gemini AI (Front + Back)' : 'Requires admin compliance review')
       });
-      toast.success(kycForm.verified ? 'KYC Auto-Verified & Activated!' : 'KYC submitted for compliance review');
+      toast.success(kycForm.verified ? 'KYC Auto-Verified & Activated!' : 'KYC submitted for compliance audit.');
       await refreshUser();
     } catch (error: any) {
       toast.error(error.message || 'KYC request failed');
@@ -278,7 +300,7 @@ export function SettingsPage() {
     setSaving(true);
     try {
       await submitWalletWhitelistRequest(user.uid, walletForm.address, walletForm.label);
-      toast.success('Wallet whitelist request submitted');
+      toast.success('USDT wallet whitelisting requested successfully.');
       setWalletForm({ label: '', address: '' });
     } catch (error: any) {
       toast.error(error.message || 'Wallet request failed');
@@ -321,309 +343,402 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-medium text-white">Account Settings</h1>
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 md:px-6">
+      
+      {/* Title */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-50 font-display">
+          Account Settings
+        </h1>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Configure security, manage payout addresses, and complete identity checks.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-4 lg:col-span-3">
-          <GlassCard className="p-2 flex flex-row md:flex-col gap-1 overflow-x-auto hide-scrollbar sticky top-28">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Navigation Sidebar Panel */}
+        <div className="lg:col-span-3 flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-3 lg:pb-0 hide-scrollbar sticky top-28 z-20">
+          <Card className="p-1.5 flex flex-row lg:flex-col gap-1 w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm">
             {navItems.map((item) => (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium whitespace-nowrap ${activeTab === item.id ? 'bg-gold-500/10 text-gold-500' : 'text-text-secondary hover:text-white hover:bg-dark-800'}`}
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all duration-200 text-xs font-extrabold whitespace-nowrap lg:w-full ${
+                  activeTab === item.id 
+                    ? 'bg-neutral-100 dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50' 
+                    : 'text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 bg-transparent'
+                }`}
               >
-                <item.icon className="w-5 h-5 shrink-0" />
-                {item.label}
+                <item.icon className="w-4 h-4 shrink-0" />
+                <span>{item.label}</span>
               </button>
             ))}
-            <div className="h-px w-full bg-gold-500/10 my-2 hidden md:block" />
-            <button onClick={logout} className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-sm font-medium text-text-secondary hover:text-danger hover:bg-dark-800">
-              <LogOut className="w-5 h-5 shrink-0" />
-              Sign Out
+            <div className="h-px w-full bg-neutral-200 dark:bg-neutral-800 my-1.5 hidden lg:block" />
+            <button 
+              type="button"
+              onClick={logout} 
+              className="hidden lg:flex items-center gap-2.5 px-4 py-3 rounded-xl transition-colors text-xs font-extrabold text-neutral-400 hover:text-red-500 hover:bg-red-500/5"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span>Sign Out Account</span>
             </button>
-          </GlassCard>
+          </Card>
         </div>
 
-        <div className="md:col-span-8 lg:col-span-9">
+        {/* Dynamic Panels Area */}
+        <div className="lg:col-span-9 w-full">
+          
+          {/* PROFILE CONFIG PANEL */}
           {activeTab === 'profile' && (
-            <GlassCard className="p-8">
-              <h2 className="text-xl font-medium text-white mb-6">Personal Information</h2>
-              <form onSubmit={handleProfileSave} className="space-y-6 max-w-xl">
-                <div className="flex items-center gap-6 pb-6 border-b border-gold-500/10">
-                  <div className="w-20 h-20 rounded-full bg-dark-800 border-2 border-gold-500/30 flex items-center justify-center overflow-hidden">
-                    {profile?.photoURL ? <img src={profile.photoURL} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl font-display text-gold-500">{(displayName || '-').charAt(0).toUpperCase()}</span>}
+            <Card className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">Personal Information</h2>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Manage details linked to your GoldEx account.</p>
+              </div>
+
+              <form onSubmit={handleProfileSave} className="space-y-5 max-w-xl">
+                
+                {/* Photo Upload Zone */}
+                <div className="flex items-center gap-6 pb-6 border-b border-neutral-100 dark:border-neutral-800/60">
+                  <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-850 border border-brand-gold/25 flex items-center justify-center overflow-hidden shrink-0 relative shadow-sm">
+                    {profile?.photoURL ? (
+                      <img src={profile.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl font-bold font-display text-brand-gold">
+                        {(displayName || 'G').charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-white mb-1">Profile Photo</p>
-                    <p className="text-xs text-text-muted mb-3">Upload a JPG or PNG avatar.</p>
-                    <label className="inline-flex">
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-neutral-850 dark:text-neutral-200">Avatar Image</p>
+                    <p className="text-[10px] text-neutral-400">JPG or PNG formats under 2MB.</p>
+                    <label className="inline-flex mt-1">
                       <input type="file" accept="image/*" onChange={handlePhotoUpload} className="sr-only" />
-                      <span className="btn-ghost h-8 px-4 text-xs rounded-xl inline-flex items-center justify-center">
-                        {uploading ? 'Uploading...' : 'Upload Photo'}
+                      <span className="bg-neutral-100 dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-850 hover:bg-neutral-200 dark:hover:bg-neutral-900 cursor-pointer font-bold px-3 py-1.5 rounded-lg text-[10px] text-neutral-800 dark:text-neutral-200 inline-flex items-center transition-colors">
+                        {uploading ? 'Processing photo...' : 'Select Avatar Image'}
                       </span>
                     </label>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">Full Name</label>
-                  <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="input-gold text-sm" required />
+                {/* Name */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block">Full Name</label>
+                  <input 
+                    value={displayName} 
+                    onChange={(event) => setDisplayName(event.target.value)} 
+                    className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200 focus:border-brand-gold" 
+                    required 
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">Email Address</label>
-                  <input type="email" value={profile?.email || user?.email || ''} disabled className="input-gold text-sm opacity-70 cursor-not-allowed" />
+                {/* Email (Disabled) */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={profile?.email || user?.email || ''} 
+                    disabled 
+                    className="w-full bg-neutral-100 dark:bg-neutral-950/40 border border-neutral-200/60 dark:border-neutral-850/60 rounded-2xl px-4 py-3 text-xs text-neutral-400 dark:text-neutral-500 font-mono cursor-not-allowed" 
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">Phone Number</label>
-                  <input value={phone} onChange={(event) => setPhone(event.target.value)} type="tel" className="input-gold text-sm" placeholder="+1..." />
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block">Phone Number</label>
+                  <input 
+                    value={phone} 
+                    onChange={(event) => setPhone(event.target.value)} 
+                    type="tel" 
+                    className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200 focus:border-brand-gold" 
+                    placeholder="+1 (555) 000-0000" 
+                  />
                 </div>
 
-                <GoldButton type="submit" disabled={saving} className="h-10 px-6">{saving ? 'Saving...' : 'Save Changes'}</GoldButton>
+                <Button 
+                  type="submit" 
+                  disabled={saving} 
+                  className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-extrabold px-6 py-2.5 rounded-xl text-xs"
+                >
+                  {saving ? 'Saving changes...' : 'Save Profile Changes'}
+                </Button>
               </form>
-            </GlassCard>
+            </Card>
           )}
 
+          {/* SECURITY PANEL */}
           {activeTab === 'security' && (
-            <GlassCard className="p-8">
-              <h2 className="text-xl font-medium text-white mb-6">Security</h2>
-              <div className="max-w-xl space-y-6">
-                <div className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-5">
-                  <h3 className="text-white font-medium mb-2 flex items-center gap-2"><MailCheck className="w-4 h-4 text-gold-500" /> Email Verification</h3>
-                  <p className="text-sm text-text-secondary leading-7 mb-4">
-                    Status: <span className={user?.emailVerified ? 'text-profit-green' : 'text-gold-500'}>{user?.emailVerified ? 'Verified' : 'Not verified'}</span>
+            <Card className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">Security & Sign-In</h2>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Control login verification and update access credentials.</p>
+              </div>
+
+              <div className="space-y-5 max-w-xl">
+                {/* Email verify */}
+                <div className="border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 bg-neutral-50/20 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-850 dark:text-neutral-200">
+                    <MailCheck className="w-4.5 h-4.5 text-brand-gold" />
+                    <span>Email Account Status</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-450 leading-relaxed">
+                    Verification status: {' '}
+                    {user?.emailVerified ? (
+                      <span className="text-emerald-500 font-extrabold uppercase tracking-wider">VERIFIED</span>
+                    ) : (
+                      <span className="text-amber-500 font-extrabold uppercase tracking-wider">UNVERIFIED</span>
+                    )}
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {!user?.emailVerified && <GoldButton type="button" onClick={handleEmailVerification} className="h-10 px-6">Send Verification</GoldButton>}
-                    <button type="button" onClick={handleRefreshUser} className="btn-ghost h-10 px-4 rounded-xl text-sm">Refresh Status</button>
+                  <div className="flex gap-2 pt-1.5">
+                    {!user?.emailVerified && (
+                      <Button 
+                        type="button" 
+                        onClick={handleEmailVerification} 
+                        className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-bold px-4 py-2 text-xs rounded-xl"
+                      >
+                        Resend Link
+                      </Button>
+                    )}
+                    <Button 
+                      type="button" 
+                      onClick={handleRefreshUser} 
+                      variant="ghost"
+                      className="text-xs py-2 px-3 hover:bg-neutral-100 dark:hover:bg-neutral-850"
+                    >
+                      Sync Status
+                    </Button>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-5">
-                  <h3 className="text-white font-medium mb-2">Password Reset</h3>
-                  <p className="text-sm text-text-secondary leading-7 mb-4">We will send a secure reset link to your registered email address. Use this link to safely update your password and keep your account protected.</p>
-                  <GoldButton type="button" onClick={handlePasswordReset} className="h-10 px-6">Send Reset Email</GoldButton>
+                {/* Password reset */}
+                <div className="border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 bg-neutral-50/20 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-850 dark:text-neutral-200">
+                    <Key className="w-4.5 h-4.5 text-brand-gold" />
+                    <span>Password Management</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-440 leading-relaxed">
+                    Trigger a secure password override. We will transmit an override dispatch link to your current email.
+                  </p>
+                  <Button 
+                    type="button" 
+                    onClick={handlePasswordReset} 
+                    className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-bold px-4 py-2 text-xs rounded-xl"
+                  >
+                    Send Reset Link
+                  </Button>
                 </div>
 
-                <div className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-5">
-                  <h3 className="text-white font-medium mb-2">Multi-Factor Authentication (MFA)</h3>
-                  <p className="text-sm text-text-secondary leading-7">Enhance your account security by enabling Multi-Factor Authentication. Once configured, you will be required to provide a verification code during login.</p>
-                  <p className="text-xs text-text-muted mt-3">To configure an authenticator app (such as Google Authenticator), please contact our security support desk.</p>
+                {/* 2FA */}
+                <div className="border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 bg-neutral-50/20 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-850 dark:text-neutral-200">
+                    <Smartphone className="w-4.5 h-4.5 text-brand-gold" />
+                    <span>Multi-Factor Authentication (MFA)</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-440 leading-relaxed">
+                    Require secondary authentication check codes during login configurations.
+                  </p>
+                  <p className="text-[10px] text-amber-500 font-semibold">
+                    Note: To establish a Google Authenticator device key, contact compliance desk.
+                  </p>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
           )}
 
+          {/* NOTIFICATION PREFS PANEL */}
           {activeTab === 'notifications' && (
-            <GlassCard className="p-8">
-              <h2 className="text-xl font-medium text-white mb-6">Notification Preferences</h2>
-              <div className="space-y-6 max-w-xl">
+            <Card className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">Notification Preferences</h2>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Control which email dispatches and event logs you receive.</p>
+              </div>
+
+              <div className="space-y-4 max-w-xl">
                 {[
-                  { id: 'profit', title: 'Profit Updates', desc: 'Receive email when admin credits profit.' },
-                  { id: 'referral', title: 'Referral Updates', desc: 'Receive email when referral features are enabled.' },
-                  { id: 'withdraw', title: 'Withdrawal Status', desc: 'Receive email for withdrawal paid or rejected status.' },
-                  { id: 'ai', title: 'AI Alerts', desc: 'Optional AI market updates when enabled.' },
-                  { id: 'security', title: 'Security Alerts', desc: 'Receive account and wallet security notifications.' },
-                  { id: 'marketing', title: 'Product News', desc: 'Optional platform announcements and policy updates.' },
+                  { id: 'profit', title: 'Daily Yield Accruals', desc: 'Receive emails when yields credit to your contracts.' },
+                  { id: 'referral', title: 'Referral Team Updates', desc: 'Alerts when team partners join or complete deposits.' },
+                  { id: 'withdraw', title: 'Withdrawal Approvals', desc: 'Dispatches when withdrawal payments are processed.' },
+                  { id: 'ai', title: 'AI Portfolio Alerts', desc: 'Accompanying alerts from automated market tracking logs.' },
+                  { id: 'security', title: 'Account Security Alerts', desc: 'MFA updates, password resets, and whitelisting logs.' },
+                  { id: 'marketing', title: 'Platform News & Features', desc: 'Optional platform news and quarterly announcements.' },
                 ].map((item) => (
-                  <div key={item.id} className="flex justify-between items-start gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">{item.title}</p>
-                      <p className="text-xs text-text-muted">{item.desc}</p>
+                  <div key={item.id} className="flex justify-between items-start gap-4 p-3 border border-neutral-100 dark:border-neutral-850 rounded-xl bg-neutral-50/20">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-neutral-850 dark:text-neutral-200">{item.title}</p>
+                      <p className="text-[10px] text-neutral-400">{item.desc}</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={Boolean(prefs[item.id as keyof typeof prefs])}
                       onChange={(event) => setPrefs((prev) => ({ ...prev, [item.id]: event.target.checked }))}
-                      className="mt-1 h-5 w-5 accent-[#D4AF37]"
+                      className="mt-1 h-4 w-4 accent-[#D4AF37] cursor-pointer"
                     />
                   </div>
                 ))}
-                <GoldButton type="button" disabled={saving} onClick={handlePreferenceSave} className="h-10 px-6">{saving ? 'Saving...' : 'Save Preferences'}</GoldButton>
+                
+                <Button 
+                  type="button" 
+                  disabled={saving} 
+                  onClick={handlePreferenceSave} 
+                  className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-extrabold px-6 py-2.5 rounded-xl text-xs mt-2"
+                >
+                  {saving ? 'Saving preferences...' : 'Save Notification Preferences'}
+                </Button>
               </div>
-            </GlassCard>
+            </Card>
           )}
 
+          {/* KYC PANELS */}
           {activeTab === 'kyc' && (
-            <GlassCard className="p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-[0.18] pointer-events-none">
-                <img src="/images/shield Security.png" alt="KYC Shield" className="w-36 h-36 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
-              </div>
-              
-              <div className="flex justify-between items-start mb-6">
+            <Card className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b border-neutral-150 dark:border-neutral-850">
                 <div>
-                  <h2 className="text-xl font-medium text-white mb-2">Identity Verification (KYC)</h2>
-                  <p className="text-sm text-text-secondary max-w-md">
-                    Upload your document to verify your identity. Your details are securely encrypted and processed.
+                  <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">Identity Verification (KYC)</h2>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    Submit files to clear withdrawal checks. Auto-processing runs via Gemini AI OCR.
                   </p>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider ${
-                  profile?.kycStatus === 'verified'
-                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                    : profile?.kycStatus === 'pending'
-                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                    : 'bg-gold-500/10 text-gold-500 border border-gold-500/20'
-                }`}>
-                  <FileCheck className="w-4 h-4" /> {profile?.kycStatus === 'verified' ? 'Verified' : profile?.kycStatus === 'pending' ? 'Pending' : 'Not Started'}
-                </span>
+                
+                <Badge 
+                  variant={
+                    profile?.kycStatus === 'verified'
+                      ? 'success'
+                      : profile?.kycStatus === 'pending'
+                      ? 'warning'
+                      : 'gold'
+                  }
+                  text={profile?.kycStatus === 'verified' ? 'VERIFIED' : profile?.kycStatus === 'pending' ? 'PENDING AUDIT' : 'NOT STARTED'}
+                  className="text-[9px] py-1 px-3 font-bold uppercase tracking-wider"
+                />
               </div>
 
               {profile?.kycStatus === 'verified' ? (
-                <div className="bg-emerald-950/10 border border-emerald-500/25 rounded-2xl p-6 max-w-xl space-y-6">
-                  <div className="flex items-center gap-4 border-b border-emerald-500/20 pb-4">
-                    <div className="p-3 bg-emerald-500/10 rounded-full">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                <div className="border border-emerald-500/25 bg-emerald-500/5 rounded-2xl p-5 max-w-xl space-y-4 shadow-inner">
+                  <div className="flex items-center gap-3 border-b border-emerald-500/15 pb-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                      <CheckCircle2 className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                        Verification Complete
-                      </h3>
-                      <p className="text-emerald-400 text-xs font-medium">Your identity has been verified successfully.</p>
+                      <h3 className="text-neutral-850 dark:text-neutral-200 font-bold text-xs">KYC Audit Passed</h3>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Account fully cleared for withdrawals</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3.5">
-                    <h4 className="text-[10px] text-text-muted uppercase tracking-wider font-semibold">Verified Details</h4>
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-xs">
+                  <div className="space-y-3 text-xs pt-1">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold block">Verified Document Details</span>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                       <div>
-                        <span className="text-text-muted block mb-0.5">Legal Name</span>
-                        <span className="text-white font-medium">{profile?.kycLegalName || '-'}</span>
+                        <span className="text-neutral-400 block text-[10px]">Legal Name</span>
+                        <span className="text-neutral-800 dark:text-neutral-200 font-bold">{profile?.kycLegalName || '-'}</span>
                       </div>
                       <div>
-                        <span className="text-text-muted block mb-0.5">Country / Region</span>
-                        <span className="text-white font-medium">{profile?.kycCountry || '-'}</span>
+                        <span className="text-neutral-400 block text-[10px]">Country of Residence</span>
+                        <span className="text-neutral-800 dark:text-neutral-200 font-bold">{profile?.kycCountry || '-'}</span>
                       </div>
                       <div>
-                        <span className="text-text-muted block mb-0.5">Document Type</span>
-                        <span className="text-white font-medium uppercase">
-                          {profile?.kycDocumentType === 'passport' 
-                            ? 'Passport' 
-                            : profile?.kycDocumentType === 'driver_license' 
-                            ? "Driver's License" 
-                            : profile?.kycDocumentType === 'national_id' 
-                            ? 'National ID' 
-                            : profile?.kycDocumentType || '-'}
+                        <span className="text-neutral-400 block text-[10px]">Document Type</span>
+                        <span className="text-neutral-800 dark:text-neutral-200 font-bold uppercase">{profile?.kycDocumentType || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-400 block text-[10px]">Document Reference Number</span>
+                        <span className="text-neutral-800 dark:text-neutral-200 font-mono font-bold">
+                          {profile?.kycDocumentNumber ? `${profile.kycDocumentNumber.slice(0, 4)}****${profile.kycDocumentNumber.slice(-3)}` : '-'}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-text-muted block mb-0.5">Document Number</span>
-                        <span className="text-white font-medium font-mono">
-                          {profile?.kycDocumentNumber 
-                            ? `${profile.kycDocumentNumber.slice(0, 4)}****${profile.kycDocumentNumber.slice(-4)}`
-                            : '-'}
-                        </span>
-                      </div>
-                      {profile?.kycDob && (
-                        <div>
-                          <span className="text-text-muted block mb-0.5">Date of Birth</span>
-                          <span className="text-white font-medium">{profile.kycDob}</span>
-                        </div>
-                      )}
-                      {profile?.kycExpiryDate && (
-                        <div>
-                          <span className="text-text-muted block mb-0.5">Expiration Date</span>
-                          <span className="text-white font-medium">{profile.kycExpiryDate}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               ) : uploadingDoc || analyzingDoc ? (
-                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-8 max-w-xl flex flex-col items-center justify-center text-center gap-4 min-h-[280px]">
-                  <Loader2 className="w-10 h-10 text-gold-500 animate-spin" />
+                <div className="border border-neutral-200 dark:border-neutral-800 bg-neutral-50/20 rounded-2xl p-8 max-w-xl flex flex-col items-center justify-center text-center gap-3 min-h-[220px]">
+                  <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
                   <div>
-                    <h3 className="text-white font-medium text-base mb-1">
-                      System is verifying...
-                    </h3>
-                    <p className="text-text-muted text-xs max-w-xs leading-relaxed">
-                      Please wait while our system securely processes and validates your identity document.
+                    <h3 className="text-xs font-bold text-neutral-850 dark:text-neutral-200">Processing Document Scan</h3>
+                    <p className="text-[10px] text-neutral-400 max-w-xs leading-relaxed mt-1">
+                      Gemini OCR is scanning front/back surfaces to extract passport, DOB, and expiry fields.
                     </p>
                   </div>
                 </div>
               ) : !kycForm.legalName ? (
-                <div className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-6 max-w-xl">
-                  <div>
-                    <label className="text-xs text-text-muted uppercase tracking-wider block font-medium mb-2">Select ID Document Type</label>
+                <div className="border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 space-y-5 max-w-xl bg-neutral-50/10">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">ID Document Class</label>
                     <select
                       value={kycForm.documentType}
                       onChange={(event) => setKycForm((prev) => ({ 
                         ...prev, 
                         documentType: event.target.value,
-                        // Reset back doc if switching to passport
                         backDocumentUrl: event.target.value === 'passport' ? '' : prev.backDocumentUrl
                       }))}
-                      className="input-gold text-sm w-full"
+                      className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
                     >
-                      <option value="passport">Passport (Info Page only)</option>
+                      <option value="passport">International Passport (Info Page)</option>
                       <option value="national_id">National ID Card (Front + Back)</option>
                       <option value="driver_license">Driver's License (Front + Back)</option>
                     </select>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Front Document Upload Slot */}
-                    <div>
-                      <label className="text-xs text-text-muted block font-medium mb-2">
-                        {kycForm.documentType === 'passport' ? 'Passport Info Page' : 'ID Card Front Side'}
+                    {/* Front upload */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        {kycForm.documentType === 'passport' ? 'Passport Bio Page' : 'Front Surface'}
                       </label>
                       {kycForm.documentUrl ? (
-                        <div className="relative rounded-xl border border-gold-500/20 overflow-hidden h-36 group bg-dark-950/40">
-                          <img src={kycForm.documentUrl} alt="Document Front" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                            <label className="cursor-pointer bg-gold-500 hover:bg-gold-600 text-dark-950 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition">
-                              Change
+                        <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden h-36 bg-neutral-950">
+                          <img src={kycForm.documentUrl} alt="Front surface" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-neutral-950/80 opacity-0 hover:opacity-100 transition flex items-center justify-center gap-2">
+                            <label className="cursor-pointer bg-brand-gold hover:bg-brand-gold-light text-neutral-950 px-3 py-1.5 rounded-lg text-[9px] font-bold">
+                              Replace
                               <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('front', e)} className="hidden" />
                             </label>
                             <button
                               type="button"
                               onClick={() => setKycForm(prev => ({ ...prev, documentUrl: '' }))}
-                              className="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition"
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold"
                             >
-                              Remove
+                              Delete
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="border border-dashed border-gold-500/20 hover:border-gold-500/40 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition relative group bg-dark-900/20 h-36">
+                        <div className="border border-dashed border-neutral-200 dark:border-neutral-800 hover:border-brand-gold/40 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer transition relative bg-white dark:bg-neutral-950/30 h-36 group">
                           <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('front', e)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <Upload className="w-6 h-6 text-gold-500/50 group-hover:text-gold-500 transition mb-2" />
-                          <p className="text-white text-xs font-medium mb-0.5">Upload Front Side</p>
-                          <p className="text-[9px] text-text-muted text-center leading-relaxed">JPG or PNG</p>
+                          <Upload className="w-5 h-5 text-neutral-400 group-hover:text-brand-gold mb-1.5 transition-colors" />
+                          <p className="text-neutral-800 dark:text-neutral-200 text-xs font-bold">Upload Front Side</p>
+                          <p className="text-[9px] text-neutral-400 mt-0.5">JPEG / PNG format</p>
                         </div>
                       )}
                     </div>
 
-                    {/* Back Document Upload Slot (Hidden for passport) */}
+                    {/* Back upload (except passport) */}
                     {kycForm.documentType !== 'passport' && (
-                      <div>
-                        <label className="text-xs text-text-muted block font-medium mb-2">ID Card Back Side</label>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Back Surface</label>
                         {kycForm.backDocumentUrl ? (
-                          <div className="relative rounded-xl border border-gold-500/20 overflow-hidden h-36 group bg-dark-950/40">
-                            <img src={kycForm.backDocumentUrl} alt="Document Back" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                              <label className="cursor-pointer bg-gold-500 hover:bg-gold-600 text-dark-950 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition">
-                                Change
+                          <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden h-36 bg-neutral-950">
+                            <img src={kycForm.backDocumentUrl} alt="Back surface" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-neutral-950/80 opacity-0 hover:opacity-100 transition flex items-center justify-center gap-2">
+                              <label className="cursor-pointer bg-brand-gold hover:bg-brand-gold-light text-neutral-950 px-3 py-1.5 rounded-lg text-[9px] font-bold">
+                                Replace
                                 <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('back', e)} className="hidden" />
                               </label>
                               <button
                                 type="button"
                                 onClick={() => setKycForm(prev => ({ ...prev, backDocumentUrl: '' }))}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition"
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold"
                               >
-                                Remove
+                                Delete
                               </button>
                             </div>
                           </div>
                         ) : (
-                          <div className="border border-dashed border-gold-500/20 hover:border-gold-500/40 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition relative group bg-dark-900/20 h-36">
+                          <div className="border border-dashed border-neutral-200 dark:border-neutral-800 hover:border-brand-gold/40 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer transition relative bg-white dark:bg-neutral-950/30 h-36 group">
                             <input type="file" accept="image/*" onChange={(e) => handleDocumentUpload('back', e)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                            <Upload className="w-6 h-6 text-gold-500/50 group-hover:text-gold-500 transition mb-2" />
-                            <p className="text-white text-xs font-medium mb-0.5">Upload Back Side</p>
-                            <p className="text-[9px] text-text-muted text-center leading-relaxed">JPG or PNG</p>
+                            <Upload className="w-5 h-5 text-neutral-400 group-hover:text-brand-gold mb-1.5 transition-colors" />
+                            <p className="text-neutral-800 dark:text-neutral-200 text-xs font-bold">Upload Back Side</p>
+                            <p className="text-[9px] text-neutral-400 mt-0.5">JPEG / PNG format</p>
                           </div>
                         )}
                       </div>
@@ -631,69 +746,70 @@ export function SettingsPage() {
                   </div>
 
                   <div className="pt-2">
-                    <GoldButton
+                    <Button
                       type="button"
                       onClick={handleRunAiAnalysis}
                       disabled={
                         !kycForm.documentUrl || 
                         (kycForm.documentType !== 'passport' && !kycForm.backDocumentUrl)
                       }
-                      className="w-full h-11"
+                      className="w-full bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-extrabold h-11 text-xs"
                     >
                       Verify Document
-                    </GoldButton>
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleKycSubmit} className="bg-dark-900/50 border border-gold-500/10 rounded-2xl p-6 space-y-4 max-w-xl">
-                  <div className="p-3 bg-gold-500/5 border border-gold-500/10 rounded-xl flex items-center justify-between">
-                    <span className="text-xs text-text-secondary">Verification Scan Result:</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                /* OCR Scan validation form */
+                <form onSubmit={handleKycSubmit} className="border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 space-y-4 max-w-xl bg-neutral-50/10">
+                  <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl flex items-center justify-between">
+                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Gemini Scan Status</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                       kycForm.verified
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                     }`}>
-                      {kycForm.verified ? 'System Verified' : 'Under Review'}
+                      {kycForm.verified ? 'VERIFIED' : 'PENDING REVIEW'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Legal Name</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-neutral-400 uppercase tracking-wider block font-bold">Legal Name</label>
                       <input
                         value={kycForm.legalName}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, legalName: event.target.value }))}
-                        className="input-gold text-sm w-full"
-                        placeholder="Legal full name"
+                        className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-2 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
+                        placeholder="Legal Name"
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Country of residence</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-neutral-400 uppercase tracking-wider block font-bold">Country</label>
                       <input
                         value={kycForm.country}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, country: event.target.value }))}
-                        className="input-gold text-sm w-full"
+                        className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-2 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
                         placeholder="Country"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Document Number</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-neutral-400 uppercase tracking-wider block font-bold">ID Number</label>
                       <input
                         value={kycForm.documentNumber}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, documentNumber: event.target.value }))}
-                        className="input-gold text-sm w-full"
-                        placeholder="ID / Passport Number"
+                        className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-2 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
+                        placeholder="Document Number"
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Document Type</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-neutral-400 uppercase tracking-wider block font-bold">Document Type</label>
                       <select
                         value={kycForm.documentType}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, documentType: event.target.value }))}
-                        className="input-gold text-sm w-full"
+                        className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-2 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
                       >
                         <option value="passport">Passport</option>
                         <option value="national_id">National ID</option>
@@ -703,30 +819,34 @@ export function SettingsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Date of Birth</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-neutral-400 uppercase tracking-wider block font-bold">Date of Birth</label>
                       <input
                         type="date"
                         value={kycForm.dob}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, dob: event.target.value }))}
-                        className="input-gold text-sm w-full"
+                        className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-2 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] text-text-muted uppercase tracking-wider block font-medium mb-1.5">Expiration Date</label>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-neutral-400 uppercase tracking-wider block font-bold">Expiration Date</label>
                       <input
                         type="date"
                         value={kycForm.expiryDate}
                         onChange={(event) => setKycForm((prev) => ({ ...prev, expiryDate: event.target.value }))}
-                        className="input-gold text-sm w-full"
+                        className="w-full bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-2 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200"
                       />
                     </div>
                   </div>
 
                   <div className="flex gap-3 pt-2">
-                    <GoldButton type="submit" disabled={saving} className="h-10 px-6">
-                      {saving ? 'Saving...' : kycForm.verified ? 'Complete Verification' : 'Submit for Review'}
-                    </GoldButton>
+                    <Button 
+                      type="submit" 
+                      disabled={saving} 
+                      className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-extrabold px-5 py-2 text-xs rounded-xl"
+                    >
+                      {saving ? 'Saving...' : kycForm.verified ? 'Complete Verification' : 'Submit KYC Details'}
+                    </Button>
                     <button
                       type="button"
                       onClick={() => setKycForm({
@@ -741,59 +861,132 @@ export function SettingsPage() {
                         verified: false,
                         notes: ''
                       })}
-                      className="h-10 px-5 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs font-semibold hover:bg-red-500/10 transition"
+                      className="bg-transparent text-red-500 hover:bg-red-500/5 px-4 py-2 text-xs font-bold rounded-xl border border-red-500/20"
                     >
                       Reset Upload
                     </button>
                   </div>
                 </form>
               )}
-            </GlassCard>
+            </Card>
           )}
 
+          {/* WALLET WHITELISTS PANELS */}
           {activeTab === 'wallets' && (
-            <GlassCard className="p-8">
-              <h2 className="text-xl font-medium text-white mb-6">Wallet Whitelist</h2>
-              <form onSubmit={handleWalletSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_auto] gap-3 mb-6">
-                <input value={walletForm.label} onChange={(event) => setWalletForm((prev) => ({ ...prev, label: event.target.value }))} className="input-gold text-sm" placeholder="Wallet label" />
-                <input value={walletForm.address} onChange={(event) => setWalletForm((prev) => ({ ...prev, address: event.target.value }))} className="input-gold text-sm font-mono" placeholder="0x..." />
-                <GoldButton type="submit" disabled={saving} className="h-11 px-5">{saving ? 'Saving...' : 'Request'}</GoldButton>
-              </form>
-              <div className="space-y-3">
-                {wallets.length === 0 ? <p className="text-sm text-text-muted">No wallet whitelist requests yet.</p> : wallets.map((wallet) => (
-                  <div key={wallet.id} className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-4">
-                    <div className="flex justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-white">{wallet.label || 'BEP20 wallet'}</p>
-                        <p className="text-xs text-text-muted font-mono break-all">{wallet.address}</p>
-                      </div>
-                      <span className="badge badge-gold h-fit">{wallet.status}</span>
-                    </div>
-                  </div>
-                ))}
+            <Card className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">Wallet Address Whitelist</h2>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Whitelist external BEP20 wallet keys to clear withdrawal channels.</p>
               </div>
-            </GlassCard>
+
+              {/* whitelist request form */}
+              <form onSubmit={handleWalletSubmit} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3">
+                <input 
+                  value={walletForm.label} 
+                  onChange={(event) => setWalletForm((prev) => ({ ...prev, label: event.target.value }))} 
+                  className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200 focus:border-brand-gold" 
+                  placeholder="Wallet Label (e.g. Ledger, Metamask)" 
+                  required
+                />
+                <input 
+                  value={walletForm.address} 
+                  onChange={(event) => setWalletForm((prev) => ({ ...prev, address: event.target.value }))} 
+                  className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none text-neutral-850 dark:text-neutral-200 focus:border-brand-gold font-mono" 
+                  placeholder="USDT BEP20 Address (0x...)" 
+                  required
+                />
+                <Button 
+                  type="submit" 
+                  disabled={saving} 
+                  className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-extrabold px-5 py-3 text-xs rounded-2xl"
+                >
+                  {saving ? 'Requesting...' : 'Request Whitelist'}
+                </Button>
+              </form>
+
+              {/* wallets list */}
+              <div className="space-y-3 pt-2">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold block">Whitelisted Wallets</span>
+                {wallets.length === 0 ? (
+                  <p className="text-xs text-neutral-400">No whitelisted wallets registered.</p>
+                ) : (
+                  wallets.map((wallet) => (
+                    <div key={wallet.id} className="rounded-2xl border border-neutral-100 dark:border-neutral-850 p-4 bg-neutral-50/20 flex justify-between gap-4 items-center">
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-neutral-850 dark:text-neutral-200">{wallet.label || 'BEP20 Address'}</p>
+                        <p className="text-[11px] text-neutral-450 font-mono break-all leading-normal">{wallet.address}</p>
+                      </div>
+                      
+                      <Badge 
+                        variant={
+                          wallet.status === 'approved'
+                            ? 'success'
+                            : wallet.status === 'rejected'
+                            ? 'error'
+                            : 'warning'
+                        }
+                        text={wallet.status.toUpperCase()}
+                        className="text-[9px] font-bold py-0.5 px-2.5 rounded-full shrink-0"
+                      />
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
           )}
 
+          {/* DATA MANAGEMENT PANEL */}
           {activeTab === 'data' && (
-            <GlassCard className="p-8">
-              <h2 className="text-xl font-medium text-white mb-6">Account Data</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-3xl">
-                <div className="rounded-xl border border-gold-500/10 bg-dark-900/50 p-5">
-                  <Download className="w-5 h-5 text-gold-500 mb-3" />
-                  <h3 className="text-white font-medium mb-2">Export Account Data</h3>
-                  <p className="text-sm text-text-secondary leading-7 mb-4">Download profile, deposits, investments, withdrawals, wallet requests, and immutable ledger entries as JSON.</p>
-                  <GoldButton type="button" onClick={handleExportData} className="h-10 px-6">Export JSON</GoldButton>
+            <Card className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-50">Data & Privacy Management</h2>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Export logs or manage account deletion cycles.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl pt-2">
+                {/* Export Data */}
+                <div className="border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 bg-neutral-50/20 space-y-3.5">
+                  <div className="w-9 h-9 bg-brand-gold/10 rounded-xl flex items-center justify-center text-brand-gold">
+                    <Download className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-neutral-800 dark:text-neutral-200 font-bold text-xs">Export Account Profile</h3>
+                    <p className="text-[10px] text-neutral-400 leading-relaxed mt-1">
+                      Download local transaction histories, wallet whitelists, kyc documents, and ledger reports as a standard JSON file.
+                    </p>
+                  </div>
+                  <Button 
+                    type="button" 
+                    onClick={handleExportData} 
+                    className="bg-[#D4AF37] hover:bg-brand-gold-light text-neutral-950 font-bold px-4 py-2 text-xs rounded-xl"
+                  >
+                    Export JSON
+                  </Button>
                 </div>
-                <div className="rounded-xl border border-danger/20 bg-danger/5 p-5">
-                  <Trash2 className="w-5 h-5 text-danger mb-3" />
-                  <h3 className="text-white font-medium mb-2">Account Deletion</h3>
-                  <p className="text-sm text-text-secondary leading-7 mb-4">Request admin review for deletion. Ledger and compliance records may be retained where legally required.</p>
-                  <button type="button" onClick={handleDeletionRequest} className="btn-ghost h-10 px-4 rounded-xl text-sm text-danger">Request Deletion</button>
+
+                {/* Account Deletion */}
+                <div className="border border-red-500/15 rounded-2xl p-5 bg-red-500/5 space-y-3.5">
+                  <div className="w-9 h-9 bg-red-500/10 rounded-xl flex items-center justify-center text-red-500">
+                    <Trash className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-neutral-800 dark:text-neutral-200 font-bold text-xs text-red-500">Delete Account</h3>
+                    <p className="text-[10px] text-neutral-400 leading-relaxed mt-1">
+                      Initiate admin deletion reviews. Compliance KYC data and ledger records might remain preserved where locally required by law.
+                    </p>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={handleDeletionRequest} 
+                    className="bg-transparent border border-red-500/25 hover:bg-red-500/10 text-red-500 font-bold px-4 py-2 text-xs rounded-xl transition-colors"
+                  >
+                    Request Deletion
+                  </button>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
           )}
+
         </div>
       </div>
     </div>

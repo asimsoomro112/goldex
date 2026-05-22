@@ -4,6 +4,7 @@ import { Menu, X, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { AuroraBackground } from '@/components/ui/AuroraBackground';
 import { Footer } from '@/components/ui/Footer';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 /* ─── Font + CSS variable injection ─────────────────────────────────── */
@@ -199,7 +200,7 @@ export function MainLayout() {
         animation: 'grain 8s steps(10) infinite',
       }} />
 
-      <div style={{
+      <div className="public-shell" style={{
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -312,6 +313,8 @@ export function MainLayout() {
             }}
               className="desktop-auth"
             >
+              <ThemeToggle />
+
               {/* Sign In */}
               <Link to="/login" style={{ textDecoration: 'none' }}>
                 <button
@@ -374,23 +377,26 @@ export function MainLayout() {
             </div>
 
             {/* ── Mobile menu trigger ── */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setMenuOpen(true)}
-              className="mobile-menu-btn"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 40, height: 40,
-                borderRadius: 12,
-                border: '1px solid rgba(212,175,55,0.2)',
-                background: 'rgba(212,175,55,0.06)',
-                color: '#D4AF37',
-                cursor: 'pointer',
-                zIndex: 1,
-              }}
-            >
-              <Menu style={{ width: 18, height: 18 }} />
-            </motion.button>
+            <div className="mobile-actions">
+              <ThemeToggle compact className="mobile-theme-btn" />
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setMenuOpen(true)}
+                className="mobile-menu-btn"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 40, height: 40,
+                  borderRadius: 12,
+                  border: '1px solid rgba(212,175,55,0.2)',
+                  background: 'rgba(212,175,55,0.06)',
+                  color: '#D4AF37',
+                  cursor: 'pointer',
+                  zIndex: 1,
+                }}
+              >
+                <Menu style={{ width: 18, height: 18 }} />
+              </motion.button>
+            </div>
           </div>
         </header>
 
@@ -651,13 +657,20 @@ export function MainLayout() {
       {/* ── Responsive utilities ──────────────────────────────── */}
       <style>{`
         .desktop-nav,
-        .desktop-auth   { display: none !important; }
+        .desktop-auth,
+        .mobile-theme-btn { display: none !important; }
+        .mobile-actions { display: flex; align-items: center; gap: 8px; z-index: 1; }
         .mobile-menu-btn { display: flex !important; }
 
         @media (min-width: 1024px) {
           .desktop-nav,
           .desktop-auth   { display: flex !important; }
+          .mobile-actions { display: none !important; }
+          .mobile-theme-btn { display: none !important; }
           .mobile-menu-btn { display: none !important; }
+        }
+        @media (max-width: 1023px) {
+          .mobile-theme-btn { display: inline-flex !important; }
         }
       `}</style>
     </>

@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-gold-100: #FFF5CC;
@@ -9,6 +10,22 @@
   --color-gold-500: #D4AF37;
   --color-gold-600: #B8960C;
   --color-gold-700: #8B6914;
+  
+  --color-brand-gold: #D4AF37;
+  --color-brand-gold-light: #F0D060;
+  --color-brand-gold-dark: #A88820;
+  
+  --color-surface-base: #FAFAF8;
+  --color-surface-card: #FFFFFF;
+  --color-surface-muted: #F4F2EE;
+  
+  --color-surface-dark-base: #0F0F0E;
+  --color-surface-dark-card: #1A1A19;
+  --color-surface-dark-muted: #252524;
+  
+  --color-profit: #16A34A;
+  --color-loss: #DC2626;
+  --color-pending: #D97706;
   
   --color-dark-950: #030305;
   --color-dark-900: #07070D;
@@ -20,6 +37,9 @@
   --color-success: #00F5A0;
   --color-danger: #FF4757;
   --color-profit-green: #00F5A0;
+  --color-text-primary: #E8E4D4;
+  --color-text-secondary: rgba(232,228,212,0.65);
+  --color-text-muted: rgba(232,228,212,0.35);
 
   --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -63,6 +83,22 @@
     --loss:    #FF4757;
     --warning: #FFB800;
     --info:    #3B82F6;
+    --brand-gold: #D4AF37;
+    --brand-gold-light: #F0D060;
+    --brand-gold-dark: #A88820;
+
+    --surface-1: #07070D;
+    --surface-2: #0D0C1A;
+    --surface-3: #12111F;
+    --surface-950: #05050E;
+    --surface-900: #09090F;
+    --surface-800: #0D0C1A;
+    --text-bright: #F7F3E8;
+    --text-mid: #B8B0A0;
+    --text-dim: rgba(232,228,212,0.35);
+    --glass-bg: rgba(8, 7, 18, 0.55);
+    --glass-border: rgba(212,175,55,0.18);
+    --glass-hover: rgba(212,175,55,0.08);
 
     --grad-gold:        linear-gradient(135deg, #FFD700 0%, #F5C518 25%, #D4AF37 60%, #FFE680 100%);
     --grad-gold-text:   linear-gradient(135deg, #FFE680 0%, #F5C518 40%, #D4AF37 70%, #FFD700 100%);
@@ -107,6 +143,78 @@
     --text-primary: #E8E4D4;
     --text-secondary: rgba(232,228,212,0.65);
     --text-muted: rgba(232,228,212,0.35);
+    --aurora-bg: #07070D;
+  }
+
+  :root[data-theme="light"] {
+    --b-000: #FFFFFF;
+    --b-900: #FFFFFF;
+    --b-800: #F5F7FB;
+    --b-700: #EEF2F7;
+    --b-600: #E4EAF2;
+    --b-500: #D7E0EA;
+    --b-400: #C7D2E1;
+    --b-300: #B7C4D6;
+    --b-200: #A7B5C8;
+
+    --color-dark-950: #FFFFFF;
+    --color-dark-900: #F5F7FB;
+    --color-dark-800: #EEF2F7;
+    --color-dark-700: #E4EAF2;
+    --color-dark-600: #D7E0EA;
+    --color-dark-500: #C7D2E1;
+    --color-text-primary: #111827;
+    --color-text-secondary: rgba(17,24,39,0.72);
+    --color-text-muted: rgba(17,24,39,0.48);
+
+    --surface-1: #F5F7FB;
+    --surface-2: #FFFFFF;
+    --surface-3: #EEF2F7;
+    --surface-950: #F5F7FB;
+    --surface-900: #FFFFFF;
+    --surface-800: #EEF2F7;
+    --brand-gold: #8B6914;
+    --brand-gold-light: #D4AF37;
+    --brand-gold-dark: #5C4400;
+    --text-bright: #111827;
+    --text-mid: #475569;
+    --text-dim: rgba(17,24,39,0.42);
+    --glass-bg: rgba(255,255,255,0.74);
+    --glass-border: rgba(141,108,18,0.20);
+    --glass-hover: rgba(141,108,18,0.10);
+    --gold-300: #8B6914;
+    --gold-400: #8B6914;
+    --gold-500: #7A5B00;
+    --gold-700: #5C4400;
+    --g-300: #8B6914;
+    --g-400: #8B6914;
+    --g-500: #7A5B00;
+    --g-600: #6B4E00;
+    --profit: #047857;
+    --loss: #DC2626;
+    --color-profit-green: #047857;
+    --color-danger: #DC2626;
+
+    --grad-dark: linear-gradient(180deg, #FFFFFF 0%, #F5F7FB 100%);
+    --grad-gold-text: linear-gradient(135deg, #6B4E00 0%, #8B6914 45%, #B8960C 100%);
+    --grad-card: linear-gradient(135deg, rgba(212,175,55,0.10) 0%, rgba(59,130,246,0.05) 65%);
+    --grad-hero: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(212,175,55,0.16) 0%, transparent 70%);
+
+    --glass-1: rgba(255,255,255,0.58);
+    --glass-2: rgba(255,255,255,0.74);
+    --glass-3: rgba(255,255,255,0.90);
+    --gb-rest: rgba(141,108,18,0.18);
+    --gb-hover: rgba(141,108,18,0.34);
+    --gb-focus: rgba(141,108,18,0.55);
+
+    --shadow-card: 0 10px 34px rgba(15,23,42,0.08), 0 1px 0 rgba(255,255,255,0.85), inset 0 1px 0 rgba(255,255,255,0.72);
+    --shadow-float: 0 18px 46px rgba(15,23,42,0.13), 0 4px 16px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.72);
+    --shadow-btn: 0 6px 22px rgba(180,134,15,0.22), 0 1px 4px rgba(15,23,42,0.16);
+
+    --text-primary: #111827;
+    --text-secondary: rgba(17,24,39,0.72);
+    --text-muted: rgba(17,24,39,0.48);
+    --aurora-bg: #F5F7FB;
   }
 
   body {
@@ -131,6 +239,10 @@
     z-index: 9999;
     mix-blend-mode: overlay;
   }
+  :root[data-theme="light"] body::before {
+    opacity: 0.025;
+    mix-blend-mode: multiply;
+  }
 }
 
 @layer utilities {
@@ -145,6 +257,52 @@
     overflow: hidden;
     transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
   }
+  .glass-card {
+    background: var(--glass-2);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--gb-rest);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    color: var(--text-primary);
+    position: relative;
+    overflow: hidden;
+    transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.25) 50%, transparent 100%);
+    pointer-events: none;
+  }
+  .glass-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--grad-card);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  .gc > *,
+  .glass-card > * {
+    position: relative;
+    z-index: 1;
+  }
+  .glass-card:hover {
+    border-color: var(--gb-hover);
+    box-shadow: var(--shadow-float), var(--glow-sm);
+    transform: translateY(-2px);
+  }
+  .glass-card.glow:hover {
+    box-shadow: var(--shadow-float), var(--glow-md);
+  }
+  .glass-card.gold-border {
+    border-color: var(--gb-focus);
+    box-shadow: var(--shadow-card), var(--glow-sm);
+  }
+
   .gc::before {
     content: '';
     position: absolute;
@@ -200,6 +358,9 @@
     overflow: hidden;
     transition: transform var(--t-fast), box-shadow var(--t-base);
     -webkit-text-fill-color: #0A0800 !important;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.25;
   }
   .btn-gold::before {
     content: '';
@@ -234,6 +395,9 @@
     border: 1px solid var(--gb-rest);
     border-radius: var(--r-md);
     transition: all var(--t-base);
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.25;
   }
   .btn-ghost:hover {
     background: rgba(212,175,55,0.12);
@@ -284,6 +448,439 @@
   .input-gold:hover { border-color: var(--gb-hover); background: rgba(12,12,22,0.96); }
   .input-gold:focus { border-color: var(--gb-focus); box-shadow: 0 0 0 3px rgba(212,175,55,0.12); background: rgba(12,12,22,0.98); }
 
+  :root[data-theme="light"] .gc {
+    background: rgba(255,255,255,0.78);
+  }
+  :root[data-theme="light"] .glass-card {
+    background: rgba(255,255,255,0.82);
+    color: #111827;
+  }
+  :root[data-theme="light"] .gc:hover {
+    box-shadow: var(--shadow-float);
+  }
+  :root[data-theme="light"] .glass-card:hover {
+    box-shadow: var(--shadow-float);
+  }
+  :root[data-theme="light"] .input-gold {
+    background: rgba(255,255,255,0.92);
+    color: #111827;
+  }
+  :root[data-theme="light"] .input-gold::placeholder { color: rgba(17,24,39,0.36); }
+  :root[data-theme="light"] .input-gold:hover,
+  :root[data-theme="light"] .input-gold:focus {
+    background: #FFFFFF;
+  }
+  :root[data-theme="light"] .auth-input {
+    background: #FFFFFF;
+    color: #111827;
+  }
+  :root[data-theme="light"] .auth-input::placeholder { color: rgba(17,24,39,0.36); }
+  :root[data-theme="light"] .auth-input:hover,
+  :root[data-theme="light"] .auth-input:focus {
+    background: #FFFFFF;
+  }
+  :root[data-theme="light"] .btn-ghost {
+    background: rgba(255,255,255,0.70);
+    color: #8B6914;
+  }
+  :root[data-theme="light"] .btn-ghost:hover {
+    background: rgba(212,175,55,0.14);
+  }
+  :root[data-theme="light"] .text-gold,
+  :root[data-theme="light"] [class*="text-gold-"] {
+    background: none !important;
+    color: #7A5B00 !important;
+    -webkit-text-fill-color: #7A5B00 !important;
+  }
+  :root[data-theme="light"] .badge-gold {
+    background: rgba(139,105,20,0.12) !important;
+    color: #6B4E00 !important;
+    border-color: rgba(139,105,20,0.25) !important;
+  }
+  :root[data-theme="light"] .badge-green {
+    background: rgba(4,120,87,0.10) !important;
+    color: #047857 !important;
+    border-color: rgba(4,120,87,0.22) !important;
+  }
+  :root[data-theme="light"] .badge-red {
+    background: rgba(220,38,38,0.10) !important;
+    color: #B91C1C !important;
+    border-color: rgba(220,38,38,0.22) !important;
+  }
+  :root[data-theme="light"] .public-shell,
+  :root[data-theme="light"] .dashboard-shell,
+  :root[data-theme="light"] .auth-shell,
+  :root[data-theme="light"] .admin-shell {
+    background: #F5F7FB !important;
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="bg-dark-"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-dark-"],
+  :root[data-theme="light"] .auth-shell [class*="bg-dark-"],
+  :root[data-theme="light"] .admin-shell [class*="bg-dark-"],
+  :root[data-theme="light"] .public-shell [class*="bg-[#11111"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[#11111"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[#11111"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[#11111"],
+  :root[data-theme="light"] .public-shell [class*="bg-[#0C0C16"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[#0C0C16"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[#0C0C16"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[#0C0C16"],
+  :root[data-theme="light"] .public-shell [class*="bg-[#030305"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[#030305"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[#030305"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[#030305"] {
+    background-color: rgba(255,255,255,0.76) !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="bg-neutral-800"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-neutral-800"],
+  :root[data-theme="light"] .auth-shell [class*="bg-neutral-800"],
+  :root[data-theme="light"] .admin-shell [class*="bg-neutral-800"],
+  :root[data-theme="light"] .public-shell [class*="bg-neutral-900"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-neutral-900"],
+  :root[data-theme="light"] .auth-shell [class*="bg-neutral-900"],
+  :root[data-theme="light"] .admin-shell [class*="bg-neutral-900"],
+  :root[data-theme="light"] .public-shell [class*="bg-neutral-950"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-neutral-950"],
+  :root[data-theme="light"] .auth-shell [class*="bg-neutral-950"],
+  :root[data-theme="light"] .admin-shell [class*="bg-neutral-950"] {
+    background-color: rgba(255,255,255,0.82) !important;
+    border-color: rgba(148,163,184,0.28) !important;
+  }
+  :root[data-theme="light"] .public-shell .fixed.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .dashboard-shell .fixed.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .auth-shell .fixed.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .admin-shell .fixed.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .public-shell .absolute.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .dashboard-shell .absolute.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .auth-shell .absolute.inset-0[class*="bg-neutral-950"],
+  :root[data-theme="light"] .admin-shell .absolute.inset-0[class*="bg-neutral-950"] {
+    background-color: rgba(15,23,42,0.58) !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="bg-gradient-to"][class*="from-neutral-"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-gradient-to"][class*="from-neutral-"],
+  :root[data-theme="light"] .auth-shell [class*="bg-gradient-to"][class*="from-neutral-"],
+  :root[data-theme="light"] .admin-shell [class*="bg-gradient-to"][class*="from-neutral-"] {
+    background-color: #FFFFFF !important;
+    background-image: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 58%, #EEF2F7 100%) !important;
+    border-color: rgba(148,163,184,0.28) !important;
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="bg-[rgba(7"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[rgba(7"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[rgba(7"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[rgba(7"],
+  :root[data-theme="light"] .public-shell [class*="bg-[rgba(8"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[rgba(8"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[rgba(8"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[rgba(8"],
+  :root[data-theme="light"] .public-shell [class*="bg-[rgba(13"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[rgba(13"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[rgba(13"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[rgba(13"],
+  :root[data-theme="light"] .public-shell [class*="bg-[rgba(18"],
+  :root[data-theme="light"] .dashboard-shell [class*="bg-[rgba(18"],
+  :root[data-theme="light"] .auth-shell [class*="bg-[rgba(18"],
+  :root[data-theme="light"] .admin-shell [class*="bg-[rgba(18"] {
+    background-color: rgba(255,255,255,0.78) !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="hover:bg-dark-"]:hover,
+  :root[data-theme="light"] .dashboard-shell [class*="hover:bg-dark-"]:hover,
+  :root[data-theme="light"] .auth-shell [class*="hover:bg-dark-"]:hover,
+  :root[data-theme="light"] .admin-shell [class*="hover:bg-dark-"]:hover {
+    background-color: rgba(226,232,240,0.72) !important;
+  }
+  :root[data-theme="light"] .public-shell .text-white,
+  :root[data-theme="light"] .dashboard-shell .text-white,
+  :root[data-theme="light"] .auth-shell .text-white,
+  :root[data-theme="light"] .admin-shell .text-white,
+  :root[data-theme="light"] .public-shell [class*="hover:text-white"]:hover,
+  :root[data-theme="light"] .dashboard-shell [class*="hover:text-white"]:hover,
+  :root[data-theme="light"] .auth-shell [class*="hover:text-white"]:hover,
+  :root[data-theme="light"] .admin-shell [class*="hover:text-white"]:hover {
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="text-neutral-50"],
+  :root[data-theme="light"] .dashboard-shell [class*="text-neutral-50"],
+  :root[data-theme="light"] .auth-shell [class*="text-neutral-50"],
+  :root[data-theme="light"] .admin-shell [class*="text-neutral-50"],
+  :root[data-theme="light"] .public-shell [class*="text-neutral-100"],
+  :root[data-theme="light"] .dashboard-shell [class*="text-neutral-100"],
+  :root[data-theme="light"] .auth-shell [class*="text-neutral-100"],
+  :root[data-theme="light"] .admin-shell [class*="text-neutral-100"],
+  :root[data-theme="light"] .public-shell [class*="text-neutral-200"],
+  :root[data-theme="light"] .dashboard-shell [class*="text-neutral-200"],
+  :root[data-theme="light"] .auth-shell [class*="text-neutral-200"],
+  :root[data-theme="light"] .admin-shell [class*="text-neutral-200"] {
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="text-neutral-300"],
+  :root[data-theme="light"] .dashboard-shell [class*="text-neutral-300"],
+  :root[data-theme="light"] .auth-shell [class*="text-neutral-300"],
+  :root[data-theme="light"] .admin-shell [class*="text-neutral-300"],
+  :root[data-theme="light"] .public-shell [class*="text-neutral-400"],
+  :root[data-theme="light"] .dashboard-shell [class*="text-neutral-400"],
+  :root[data-theme="light"] .auth-shell [class*="text-neutral-400"],
+  :root[data-theme="light"] .admin-shell [class*="text-neutral-400"] {
+    color: #64748B !important;
+  }
+  :root[data-theme="light"] .public-shell .text-text-secondary,
+  :root[data-theme="light"] .dashboard-shell .text-text-secondary,
+  :root[data-theme="light"] .auth-shell .text-text-secondary,
+  :root[data-theme="light"] .admin-shell .text-text-secondary {
+    color: rgba(17,24,39,0.72) !important;
+  }
+  :root[data-theme="light"] .public-shell .text-text-muted,
+  :root[data-theme="light"] .dashboard-shell .text-text-muted,
+  :root[data-theme="light"] .auth-shell .text-text-muted,
+  :root[data-theme="light"] .admin-shell .text-text-muted {
+    color: rgba(17,24,39,0.50) !important;
+  }
+  :root[data-theme="light"] .public-shell [class*="text-[#E8E4D4"],
+  :root[data-theme="light"] .dashboard-shell [class*="text-[#E8E4D4"],
+  :root[data-theme="light"] .auth-shell [class*="text-[#E8E4D4"],
+  :root[data-theme="light"] .admin-shell [class*="text-[#E8E4D4"] {
+    color: rgba(17,24,39,0.62) !important;
+  }
+  :root[data-theme="light"] .public-shell table,
+  :root[data-theme="light"] .dashboard-shell table,
+  :root[data-theme="light"] .auth-shell table,
+  :root[data-theme="light"] .admin-shell table {
+    color: #111827;
+  }
+  :root[data-theme="light"] .public-shell thead,
+  :root[data-theme="light"] .dashboard-shell thead,
+  :root[data-theme="light"] .auth-shell thead,
+  :root[data-theme="light"] .admin-shell thead {
+    background: rgba(241,245,249,0.88) !important;
+  }
+  :root[data-theme="light"] .public-shell input,
+  :root[data-theme="light"] .dashboard-shell input,
+  :root[data-theme="light"] .auth-shell input,
+  :root[data-theme="light"] .admin-shell input,
+  :root[data-theme="light"] .public-shell textarea,
+  :root[data-theme="light"] .dashboard-shell textarea,
+  :root[data-theme="light"] .auth-shell textarea,
+  :root[data-theme="light"] .admin-shell textarea,
+  :root[data-theme="light"] .public-shell select,
+  :root[data-theme="light"] .dashboard-shell select,
+  :root[data-theme="light"] .auth-shell select,
+  :root[data-theme="light"] .admin-shell select {
+    background-color: #FFFFFF !important;
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell option,
+  :root[data-theme="light"] .dashboard-shell option,
+  :root[data-theme="light"] .auth-shell option,
+  :root[data-theme="light"] .admin-shell option {
+    background: #FFFFFF;
+    color: #111827;
+  }
+  :root[data-theme="light"] .public-shell [style*="rgba(7,7"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(7,7"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(7,7"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(7,7"],
+  :root[data-theme="light"] .public-shell [style*="rgba(8,7"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(8,7"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(8,7"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(8,7"],
+  :root[data-theme="light"] .public-shell [style*="rgba(8,8"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(8,8"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(8,8"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(8,8"],
+  :root[data-theme="light"] .public-shell [style*="rgba(13,12"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(13,12"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(13,12"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(13,12"],
+  :root[data-theme="light"] .public-shell [style*="rgba(18,17"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(18,17"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(18,17"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(18,17"] {
+    background: rgba(255,255,255,0.82) !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="background: rgba(7, 7"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: rgba(7, 7"],
+  :root[data-theme="light"] .auth-shell [style*="background: rgba(7, 7"],
+  :root[data-theme="light"] .admin-shell [style*="background: rgba(7, 7"],
+  :root[data-theme="light"] .public-shell [style*="background: rgba(8, 7"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: rgba(8, 7"],
+  :root[data-theme="light"] .auth-shell [style*="background: rgba(8, 7"],
+  :root[data-theme="light"] .admin-shell [style*="background: rgba(8, 7"],
+  :root[data-theme="light"] .public-shell [style*="background: rgba(8, 8"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: rgba(8, 8"],
+  :root[data-theme="light"] .auth-shell [style*="background: rgba(8, 8"],
+  :root[data-theme="light"] .admin-shell [style*="background: rgba(8, 8"],
+  :root[data-theme="light"] .public-shell [style*="background: rgba(13, 12"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: rgba(13, 12"],
+  :root[data-theme="light"] .auth-shell [style*="background: rgba(13, 12"],
+  :root[data-theme="light"] .admin-shell [style*="background: rgba(13, 12"],
+  :root[data-theme="light"] .public-shell [style*="background: rgba(18, 17"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: rgba(18, 17"],
+  :root[data-theme="light"] .auth-shell [style*="background: rgba(18, 17"],
+  :root[data-theme="light"] .admin-shell [style*="background: rgba(18, 17"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(4, 4"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(4, 4"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(4, 4"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(4, 4"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(5, 5"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(5, 5"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(5, 5"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(5, 5"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(7, 7"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(7, 7"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(7, 7"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(7, 7"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(8, 7"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(8, 7"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(8, 7"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(8, 7"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(8, 8"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(8, 8"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(8, 8"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(8, 8"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(13, 12"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(13, 12"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(13, 12"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(13, 12"],
+  :root[data-theme="light"] .public-shell [style*="background: linear-gradient"][style*="rgba(18, 17"],
+  :root[data-theme="light"] .dashboard-shell [style*="background: linear-gradient"][style*="rgba(18, 17"],
+  :root[data-theme="light"] .auth-shell [style*="background: linear-gradient"][style*="rgba(18, 17"],
+  :root[data-theme="light"] .admin-shell [style*="background: linear-gradient"][style*="rgba(18, 17"] {
+    background: rgba(255,255,255,0.84) !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="#F7F3E8"],
+  :root[data-theme="light"] .dashboard-shell [style*="#F7F3E8"],
+  :root[data-theme="light"] .auth-shell [style*="#F7F3E8"],
+  :root[data-theme="light"] .admin-shell [style*="#F7F3E8"],
+  :root[data-theme="light"] .public-shell [style*="#E8E4D4"],
+  :root[data-theme="light"] .dashboard-shell [style*="#E8E4D4"],
+  :root[data-theme="light"] .auth-shell [style*="#E8E4D4"],
+  :root[data-theme="light"] .admin-shell [style*="#E8E4D4"] {
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="color: rgb(247, 243, 232"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgb(247, 243, 232"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgb(247, 243, 232"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgb(247, 243, 232"],
+  :root[data-theme="light"] .public-shell [style*="color: rgb(232, 228, 212"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgb(232, 228, 212"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgb(232, 228, 212"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgb(232, 228, 212"],
+  :root[data-theme="light"] .public-shell [style*="color: rgba(247, 243, 232"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgba(247, 243, 232"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgba(247, 243, 232"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgba(247, 243, 232"],
+  :root[data-theme="light"] .public-shell [style*="color: #F7F3E8"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: #F7F3E8"],
+  :root[data-theme="light"] .auth-shell [style*="color: #F7F3E8"],
+  :root[data-theme="light"] .admin-shell [style*="color: #F7F3E8"],
+  :root[data-theme="light"] .public-shell [style*="color: #E8E4D4"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: #E8E4D4"],
+  :root[data-theme="light"] .auth-shell [style*="color: #E8E4D4"],
+  :root[data-theme="light"] .admin-shell [style*="color: #E8E4D4"] {
+    color: #111827 !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="rgba(232,228,212"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(232,228,212"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(232,228,212"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(232,228,212"],
+  :root[data-theme="light"] .public-shell [style*="rgba(184,176,160"],
+  :root[data-theme="light"] .dashboard-shell [style*="rgba(184,176,160"],
+  :root[data-theme="light"] .auth-shell [style*="rgba(184,176,160"],
+  :root[data-theme="light"] .admin-shell [style*="rgba(184,176,160"] {
+    color: rgba(17,24,39,0.66) !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="color: rgba(232, 228, 212"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgba(232, 228, 212"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgba(232, 228, 212"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgba(232, 228, 212"],
+  :root[data-theme="light"] .public-shell [style*="color: rgba(184, 176, 160"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgba(184, 176, 160"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgba(184, 176, 160"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgba(184, 176, 160"] {
+    color: rgba(17,24,39,0.68) !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="color: rgb(245, 197, 24"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgb(245, 197, 24"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgb(245, 197, 24"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgb(245, 197, 24"],
+  :root[data-theme="light"] .public-shell [style*="color: rgb(212, 175, 55"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgb(212, 175, 55"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgb(212, 175, 55"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgb(212, 175, 55"],
+  :root[data-theme="light"] .public-shell [style*="color: rgba(245, 197, 24"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgba(245, 197, 24"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgba(245, 197, 24"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgba(245, 197, 24"],
+  :root[data-theme="light"] .public-shell [style*="color: rgba(212, 175, 55"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgba(212, 175, 55"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgba(212, 175, 55"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgba(212, 175, 55"],
+  :root[data-theme="light"] .public-shell [style*="color: #F5C518"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: #F5C518"],
+  :root[data-theme="light"] .auth-shell [style*="color: #F5C518"],
+  :root[data-theme="light"] .admin-shell [style*="color: #F5C518"],
+  :root[data-theme="light"] .public-shell [style*="color: #D4AF37"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: #D4AF37"],
+  :root[data-theme="light"] .auth-shell [style*="color: #D4AF37"],
+  :root[data-theme="light"] .admin-shell [style*="color: #D4AF37"] {
+    color: #7A5B00 !important;
+  }
+  :root[data-theme="light"] .public-shell [style*="color: rgb(74, 222, 128"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: rgb(74, 222, 128"],
+  :root[data-theme="light"] .auth-shell [style*="color: rgb(74, 222, 128"],
+  :root[data-theme="light"] .admin-shell [style*="color: rgb(74, 222, 128"],
+  :root[data-theme="light"] .public-shell [style*="color: #4ADE80"],
+  :root[data-theme="light"] .dashboard-shell [style*="color: #4ADE80"],
+  :root[data-theme="light"] .auth-shell [style*="color: #4ADE80"],
+  :root[data-theme="light"] .admin-shell [style*="color: #4ADE80"] {
+    color: #047857 !important;
+  }
+  :root[data-theme="light"] .bg-gold-500.text-dark-900,
+  :root[data-theme="light"] .bg-gold-500.text-dark-950,
+  :root[data-theme="light"] label.bg-gold-500 {
+    color: #0A0800 !important;
+  }
+  :root[data-theme="light"] .dashboard-shell .text-\[\#E8E4D4\]\/40,
+  :root[data-theme="light"] .dashboard-shell .text-\[\#E8E4D4\]\/45,
+  :root[data-theme="light"] .dashboard-shell .text-\[\#E8E4D4\]\/50,
+  :root[data-theme="light"] .dashboard-shell .text-\[\#E8E4D4\]\/60 {
+    color: rgba(17,24,39,0.58) !important;
+  }
+  :root[data-theme="light"] .dashboard-shell .bg-\[\#11111F\]\/50,
+  :root[data-theme="light"] .dashboard-shell .hover\:bg-\[\#11111F\]\/50:hover {
+    background-color: rgba(226,232,240,0.72) !important;
+  }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--gb-rest);
+    background: rgba(212,175,55,0.07);
+    color: var(--g-400);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: background var(--t-base), border-color var(--t-base), color var(--t-base), transform var(--t-fast);
+  }
+  .theme-toggle:hover {
+    background: rgba(212,175,55,0.14);
+    border-color: var(--gb-hover);
+    transform: translateY(-1px);
+  }
+  .theme-toggle-compact {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
   .auth-field {
     display: flex;
     flex-direction: column;
@@ -318,10 +915,10 @@
     background: #07070D;
   }
   
-  .t-hero    { font-family: var(--font-display); font-size: clamp(48px, 6vw, 88px); font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; }
-  .t-h1      { font-family: var(--font-display); font-size: clamp(36px, 4vw, 56px); font-weight: 700; line-height: 1.1; }
-  .t-h2      { font-family: var(--font-display); font-size: clamp(24px, 3vw, 36px); font-weight: 700; line-height: 1.2; }
-  .t-h3      { font-family: var(--font-display); font-size: clamp(18px, 2vw, 24px); font-weight: 500; line-height: 1.3; }
+  .t-hero    { font-family: var(--font-display); font-size: clamp(42px, 5vw, 72px); font-weight: 900; line-height: 1.05; letter-spacing: 0; overflow-wrap: anywhere; }
+  .t-h1      { font-family: var(--font-display); font-size: clamp(34px, 4vw, 52px); font-weight: 700; line-height: 1.1; letter-spacing: 0; overflow-wrap: anywhere; }
+  .t-h2      { font-family: var(--font-display); font-size: clamp(24px, 3vw, 36px); font-weight: 700; line-height: 1.2; letter-spacing: 0; overflow-wrap: anywhere; }
+  .t-h3      { font-family: var(--font-display); font-size: clamp(18px, 2vw, 24px); font-weight: 500; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
 
   /* BODY (Outfit) */
   .t-lead    { font-size: clamp(17px, 1.5vw, 20px); font-weight: 300; line-height: 1.75; }
@@ -331,8 +928,8 @@
   .t-label   { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 
   /* MONO (JetBrains Mono) */
-  .t-num-lg  { font-family: var(--font-mono); font-size: 32px; font-weight: 500; letter-spacing: -0.02em; }
-  .t-num-md  { font-family: var(--font-mono); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+  .t-num-lg  { font-family: var(--font-mono); font-size: 32px; font-weight: 500; letter-spacing: 0; overflow-wrap: anywhere; }
+  .t-num-md  { font-family: var(--font-mono); font-size: 22px; font-weight: 500; letter-spacing: 0; overflow-wrap: anywhere; }
   .t-num-sm  { font-family: var(--font-mono); font-size: 14px; font-weight: 400; }
   .t-code    { font-family: var(--font-mono); font-size: 13px; }
   
@@ -382,37 +979,4 @@
     0%,100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.8); }
   }
-}
-
-/* ── CUSTOM CURSOR ── */
-@media (pointer: fine) {
-  * { cursor: none !important; }
-}
-.cursor-dot {
-  width: 8px; height: 8px;
-  background: var(--g-400);
-  border-radius: 50%;
-  position: fixed;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 99999;
-  transform: translate(-50%, -50%);
-  transition: transform 50ms, opacity 200ms;
-  mix-blend-mode: screen;
-}
-.cursor-ring {
-  width: 32px; height: 32px;
-  border: 1px solid rgba(212,175,55,0.5);
-  border-radius: 50%;
-  position: fixed;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 99998;
-  transform: translate(-50%, -50%);
-  transition: transform 120ms var(--ease-gold), width 200ms, height 200ms, border-color 200ms;
-}
-.cursor-ring.hovering {
-  width: 48px; height: 48px;
-  border-color: rgba(212,175,55,0.8);
-  background: rgba(212,175,55,0.05);
 }

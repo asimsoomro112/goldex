@@ -184,7 +184,7 @@ export function LoginPage() {
         </div>
         
         <div className="flex justify-end mt-[-8px] mb-[4px]">
-          <button type="button" onClick={handleOpenResetModal} className="font-sans text-[13px] text-gold-500 hover:text-gold-400 cursor-none">Forgot password?</button>
+          <button type="button" onClick={handleOpenResetModal} className="font-sans text-[13px] text-gold-500 hover:text-gold-400">Forgot password?</button>
         </div>
 
         <button type="submit" disabled={submitting} className="btn-gold w-full h-[54px] rounded-[12px] text-[16px] disabled:opacity-60">
@@ -209,7 +209,7 @@ export function LoginPage() {
         </button>
 
         <p className="text-center font-sans text-[14px] text-text-secondary mt-8">
-          No account? <Link to="/register" className="text-gold-500 font-medium relative group cursor-none">
+          No account? <Link to="/register" className="text-gold-500 font-medium relative group">
             Start trading <span className="inline-block transform transition-transform group-hover:translate-x-1">→</span>
             <span className="absolute bottom-[-2px] left-0 w-full h-[1px] bg-gold-500 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
           </Link>
@@ -223,7 +223,7 @@ export function LoginPage() {
             <button 
               type="button" 
               onClick={() => setShowResetModal(false)}
-              className="absolute top-5 right-5 text-text-muted hover:text-white transition-colors cursor-none"
+              className="absolute top-5 right-5 text-text-muted hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -282,7 +282,7 @@ export function LoginPage() {
                 <button 
                   type="button" 
                   onClick={() => setResetStep(1)} 
-                  className="w-full text-center text-xs text-gold-500/70 hover:text-gold-500 mt-2 transition-colors cursor-none"
+                  className="w-full text-center text-xs text-gold-500/70 hover:text-gold-500 mt-2 transition-colors"
                 >
                   Change Email Address
                 </button>

@@ -54,6 +54,20 @@ const STYLES = `
     pointer-events: none;
     z-index: 0;
   }
+
+  :root[data-theme="light"] .footer-wrap {
+    background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(245,247,251,0.98) 100%);
+    color: rgba(17,24,39,0.62);
+    box-shadow: inset 0 1px 0 rgba(15,23,42,0.04);
+  }
+
+  :root[data-theme="light"] .footer-title {
+    color: #111827;
+  }
+
+  :root[data-theme="light"] .footer-link {
+    color: rgba(17,24,39,0.64);
+  }
 `;
 
 export function Footer() {
@@ -94,21 +108,34 @@ export function Footer() {
                   }}
                 />
               </Link>
-              <p style={{
+               <p style={{
                 fontSize: 14, lineHeight: 1.65,
                 color: 'rgba(184,176,160,0.72)',
                 maxWidth: 480, margin: '12px 0 16px',
                 fontWeight: 300,
               }}>
-                GoldEx provides a live account dashboard for USDT BEP20 deposit requests, manually verified investments, and profit withdrawal tracking.
+                GoldEx is a gold-linked investment platform. Deposit USDT (BEP20), earn daily profit, and withdraw when ready. All deposits are verified on-chain via BscScan.
               </p>
-              <p style={{
-                fontSize: 12, lineHeight: 1.6,
-                color: 'rgba(184,176,160,0.45)',
-                maxWidth: 480, fontWeight: 300,
+              <div style={{
+                display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12,
               }}>
-                Risk notice: market-linked returns are not guaranteed. Principal remains locked while an investment is active. Profit withdrawal unlocks after the platform records eligible profit.
-              </p>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, fontWeight: 600, color: '#4ADE80',
+                  background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)',
+                  padding: '5px 12px', borderRadius: 10,
+                }}>
+                  🔒 TLS 1.3 Encrypted
+                </span>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, fontWeight: 600, color: '#60A5FA',
+                  background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)',
+                  padding: '5px 12px', borderRadius: 10,
+                }}>
+                  ✓ BscScan Verified
+                </span>
+              </div>
             </div>
 
             {/* Quick Links Column */}
@@ -129,20 +156,37 @@ export function Footer() {
               <h3 className="footer-title">Support</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13.5, fontWeight: 300 }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ color: 'rgba(184,176,160,0.4)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Deposits</span>
-                  <span style={{ color: '#F7F3E8' }}>USDT BEP20 Only</span>
+                  <span style={{ color: 'rgba(184,176,160,0.4)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Payment Method</span>
+                  <span style={{ color: '#F7F3E8' }}>USDT BEP20 (BSC Network)</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
-                  <span style={{ color: 'rgba(184,176,160,0.4)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Email Contact</span>
-                  <span style={{ color: '#F7F3E8', wordBreak: 'break-all' }}>cryptoobscanner@gmail.com</span>
+                  <span style={{ color: 'rgba(184,176,160,0.4)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Email Support</span>
+                  <span style={{ color: '#F7F3E8', wordBreak: 'break-all' }}>support@goldex.io</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
                   <span style={{ color: 'rgba(184,176,160,0.4)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Withdrawals</span>
-                  <span style={{ color: '#F7F3E8' }}>Admin Verified</span>
+                  <span style={{ color: '#F7F3E8' }}>Admin Verified • 24-48 Hours</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
+                  <span style={{ color: 'rgba(184,176,160,0.4)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Deposit Verification</span>
+                  <span style={{ color: '#4ADE80' }}>On-Chain via BscScan</span>
                 </div>
               </div>
             </div>
 
+          </div>
+
+          {/* Risk Disclaimer */}
+          <div style={{
+            background: 'rgba(245,197,24,0.03)',
+            border: '1px solid rgba(212,175,55,0.10)',
+            borderRadius: 14, padding: '16px 20px', marginBottom: 24,
+          }}>
+            <p style={{ fontSize: 11, lineHeight: 1.65, color: 'rgba(184,176,160,0.55)', fontWeight: 400, margin: 0 }}>
+              ⚠️ <strong style={{ color: 'rgba(212,175,55,0.6)' }}>Risk Disclaimer:</strong> Investing involves risk. Returns are estimated projections and are not guaranteed. 
+              Past performance does not guarantee future results. Your deposit stays locked during the earning period. 
+              Only invest what you can afford. GoldEx does not provide financial advice.
+            </p>
           </div>
 
           {/* Bottom Copyright & Fine Print */}

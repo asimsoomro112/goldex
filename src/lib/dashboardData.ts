@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Timestamp,
   addDoc,
@@ -15,21 +15,42 @@ import {
   writeBatch,
   where,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 
 const env = (import.meta as any).env;
+const BEP20_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
-export const USDT_BEP20_ADDRESS = env.VITE_USDT_BEP20_ADDRESS || 'PASTE_USDT_BEP20_ADDRESS_HERE';
+export const USDT_BEP20_ADDRESS = String(env.VITE_USDT_BEP20_ADDRESS || '').trim();
+export const IS_USDT_BEP20_ADDRESS_CONFIGURED = BEP20_ADDRESS_RE.test(USDT_BEP20_ADDRESS);
+export const USDT_BEP20_ADDRESS_DISPLAY = IS_USDT_BEP20_ADDRESS_CONFIGURED ? USDT_BEP20_ADDRESS : 'Deposit address is not configured';
 export const MIN_INVESTMENT = 50;
 export const MIN_PROFIT_WITHDRAWAL = 50;
+
+// Legacy flat-rate constants (kept for backward compatibility in Firestore rules validation)
 export const MIN_DAILY_RATE = 0.005;
 export const MAX_DAILY_RATE = 0.01;
+
+// Progressive tier-based rates
+export const INVESTMENT_TIERS = [
+  { name: 'Starter', minAmount: 50, maxAmount: 499, dailyRateMin: 0.005, dailyRateMax: 0.01 },
+  { name: 'Growth', minAmount: 500, maxAmount: 4999, dailyRateMin: 0.01, dailyRateMax: 0.012 },
+  { name: 'Elite', minAmount: 5000, maxAmount: Infinity, dailyRateMin: 0.012, dailyRateMax: 0.015 },
+] as const;
+
+export function getTierForAmount(amount: number) {
+  return INVESTMENT_TIERS.find(t => amount >= t.minAmount && amount <= t.maxAmount) || INVESTMENT_TIERS[0];
+}
+
+export function isValidBep20Address(value?: string | null) {
+  return BEP20_ADDRESS_RE.test(String(value || '').trim());
+}
 
 export type UserProfile = {
   uid: string;
   displayName?: string;
   email?: string;
   photoURL?: string | null;
+  onboardingComplete?: boolean;
   role?: 'user' | 'admin' | 'reviewer' | 'finance';
   adminRole?: 'super_admin' | 'finance' | 'compliance' | 'support' | null;
   referralCode?: string | null;
@@ -137,7 +158,25 @@ export type LedgerEntry = {
   createdAt?: Timestamp;
 };
 
-export function useDashboardData(uid?: string) {
+type DashboardTotals = {
+  lockedPrincipal: number;
+  todayProfit: number;
+  totalEarned: number;
+  withdrawableProfit: number;
+};
+
+type DashboardDataValue = {
+  profile: UserProfile | null;
+  investments: Investment[];
+  deposits: Deposit[];
+  withdrawals: Withdrawal[];
+  totals: DashboardTotals;
+  loading: boolean;
+};
+
+const DashboardDataContext = createContext<DashboardDataValue | null>(null);
+
+function useDashboardDataSource(uid?: string): DashboardDataValue {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
@@ -208,8 +247,22 @@ export function useDashboardData(uid?: string) {
   return { profile, investments, deposits, withdrawals, totals, loading };
 }
 
+export function DashboardDataProvider({ uid, children }: { uid?: string; children: ReactNode }) {
+  const value = useDashboardDataSource(uid);
+  return createElement(DashboardDataContext.Provider, { value }, children);
+}
+
+export function useDashboardData(uid?: string): DashboardDataValue {
+  const shared = useContext(DashboardDataContext);
+  if (shared) return shared;
+  return useDashboardDataSource(uid);
+}
+
 export async function createDepositRequest(uid: string, amount: number, txHash?: string) {
   ensureDb();
+  if (!IS_USDT_BEP20_ADDRESS_CONFIGURED) {
+    throw new Error('Deposit address is not configured. Please contact support before sending funds.');
+  }
   if (!Number.isFinite(amount) || amount < MIN_INVESTMENT || amount % MIN_INVESTMENT !== 0) {
     throw new Error('Investment amount must be $50 or a $50 multiple.');
   }
@@ -234,12 +287,13 @@ export async function createDepositRequest(uid: string, amount: number, txHash?:
   };
 
   batch.set(depositRef, payload);
+  const tier = getTierForAmount(amount);
   batch.set(investmentRef, {
     amount,
     method: 'usdt_bep20',
     status: 'pending_deposit',
-    dailyRateMin: MIN_DAILY_RATE,
-    dailyRateMax: MAX_DAILY_RATE,
+    dailyRateMin: tier.dailyRateMin,
+    dailyRateMax: tier.dailyRateMax,
     profitAvailable: 0,
     profitTotal: 0,
     depositAddress: USDT_BEP20_ADDRESS,
@@ -277,118 +331,60 @@ export async function createWithdrawalRequest(
   speed: 'standard' | 'express',
   fee: number
 ) {
-  ensureDb();
+  if (!auth) throw new Error('Auth system not initialized.');
+  const currentUser = auth.currentUser;
+  if (!currentUser || currentUser.uid !== uid) throw new Error('User is not authenticated.');
   if (!Number.isFinite(amount) || amount < MIN_PROFIT_WITHDRAWAL) {
     throw new Error('Minimum profit withdrawal is $50.00');
   }
-  if (!walletAddress.trim()) {
-    throw new Error('USDT BEP20 wallet address is required.');
+  if (!isValidBep20Address(walletAddress)) {
+    throw new Error('Enter a valid BEP20 wallet address.');
   }
   if (!investmentId) {
     throw new Error('Select an investment before requesting withdrawal.');
   }
 
-  const withdrawalRef = await addDoc(collection(db!, 'users', uid, 'withdrawals'), {
-    amount,
-    walletAddress,
-    investmentId,
-    method: 'usdt_bep20',
-    type: 'standard',
-    speed,
-    fee,
-    status: 'pending',
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch('/api/withdraw', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      amount,
+      walletAddress: walletAddress.trim(),
+      investmentId,
+      speed,
+      fee,
+    }),
   });
-  await addDoc(collection(db!, 'ledgerEntries'), {
-    uid,
-    type: 'withdrawal_requested',
-    amount,
-    status: 'pending',
-    refId: withdrawalRef.id,
-    refPath: `users/${uid}/withdrawals/${withdrawalRef.id}`,
-    metadata: { walletAddress, investmentId, speed, fee },
-    createdAt: serverTimestamp(),
-  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Withdrawal request failed.');
+  }
 }
 
 export async function reinvestProfit(uid: string, amount: number, sourceInvestmentId: string, targetInvestmentId?: string) {
-  ensureDb();
-  if (!Number.isFinite(amount) || amount < MIN_PROFIT_WITHDRAWAL) {
-    throw new Error('Minimum reinvestment amount is $50.00');
-  }
+  if (!auth) throw new Error('Auth system not initialized.');
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User is not authenticated.');
+  const idToken = await currentUser.getIdToken();
 
-  await runTransaction(db!, async (transaction) => {
-    const userRef = doc(db!, 'users', uid);
-    const sourceInvRef = doc(db!, 'users', uid, 'investments', sourceInvestmentId);
-    
-    const userSnap = await transaction.get(userRef);
-    const sourceInvSnap = await transaction.get(sourceInvRef);
-
-    if (!userSnap.exists()) throw new Error('User record not found.');
-    if (!sourceInvSnap.exists()) throw new Error('Source investment record not found.');
-
-    const available = Number(userSnap.data()?.totals?.withdrawableProfit || 0);
-    const sourceInvAvailable = Number(sourceInvSnap.data()?.profitAvailable || 0);
-
-    if (available < amount || sourceInvAvailable < amount) {
-      throw new Error('Insufficient profit available.');
-    }
-
-    const bonusAmount = amount * 1.05; // 5% bonus
-
-    // Deduct from source investment & user totals
-    transaction.update(sourceInvRef, {
-      profitAvailable: increment(-amount),
-      updatedAt: serverTimestamp(),
-    });
-
-    transaction.update(userRef, {
-      'totals.withdrawableProfit': increment(-amount),
-      'totals.lockedPrincipal': increment(bonusAmount),
-      updatedAt: serverTimestamp(),
-    });
-
-    let activeInvId = '';
-    if (targetInvestmentId) {
-      // Top up existing investment
-      const targetInvRef = doc(db!, 'users', uid, 'investments', targetInvestmentId);
-      const targetInvSnap = await transaction.get(targetInvRef);
-      if (!targetInvSnap.exists()) throw new Error('Target investment portfolio not found.');
-      
-      transaction.update(targetInvRef, {
-        amount: increment(bonusAmount),
-        updatedAt: serverTimestamp(),
-      });
-      activeInvId = targetInvestmentId;
-    } else {
-      // Create new investment portfolio (active immediately)
-      const newInvRef = doc(collection(db!, 'users', uid, 'investments'));
-      transaction.set(newInvRef, {
-        amount: bonusAmount,
-        status: 'active',
-        profitAvailable: 0,
-        profitTotal: 0,
-        depositAddress: 'Internal Reinvestment',
-        txHash: 'reinvestment',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      activeInvId = newInvRef.id;
-    }
-
-    // Add ledger entry
-    transaction.set(doc(collection(db!, 'ledgerEntries')), {
-      uid,
-      type: 'reinvestment',
-      amount: amount,
-      bonus: amount * 0.05,
-      status: 'completed',
-      refId: activeInvId,
-      refPath: `users/${uid}/investments/${activeInvId}`,
-      createdAt: serverTimestamp(),
-    });
+  const response = await fetch('/api/reinvest', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ amount, sourceInvestmentId, targetInvestmentId })
   });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Reinvestment failed.');
+  }
 }
 
 export async function settleAndWithdrawProfit(
@@ -398,62 +394,24 @@ export async function settleAndWithdrawProfit(
   speed: 'standard' | 'express',
   fee: number
 ) {
-  ensureDb();
-  if (!walletAddress.trim()) {
-    throw new Error('USDT BEP20 wallet address is required.');
-  }
+  if (!auth) throw new Error('Auth system not initialized.');
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User is not authenticated.');
+  const idToken = await currentUser.getIdToken();
 
-  await runTransaction(db!, async (transaction) => {
-    const userRef = doc(db!, 'users', uid);
-    const investmentRef = doc(db!, 'users', uid, 'investments', investmentId);
-    
-    const userSnap = await transaction.get(userRef);
-    const invSnap = await transaction.get(investmentRef);
-
-    if (!userSnap.exists()) throw new Error('User record not found.');
-    if (!invSnap.exists()) throw new Error('Investment record not found.');
-
-    const inv = invSnap.data();
-    if (inv.status !== 'active') {
-      throw new Error('Investment portfolio is not active.');
-    }
-
-    const availableProfit = Number(inv.profitAvailable || 0);
-    if (availableProfit < MIN_PROFIT_WITHDRAWAL) {
-      throw new Error('Minimum settlement profit is $50.00');
-    }
-
-    // Set investment status to pending_settlement
-    transaction.update(investmentRef, {
-      status: 'pending_settlement',
-      updatedAt: serverTimestamp(),
-    });
-
-    const withdrawalRef = doc(collection(db!, 'users', uid, 'withdrawals'));
-    transaction.set(withdrawalRef, {
-      amount: availableProfit,
-      walletAddress,
-      investmentId,
-      method: 'usdt_bep20',
-      type: 'settlement',
-      speed,
-      fee,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-
-    transaction.set(doc(collection(db!, 'ledgerEntries')), {
-      uid,
-      type: 'settlement_requested',
-      amount: availableProfit,
-      status: 'pending',
-      refId: withdrawalRef.id,
-      refPath: `users/${uid}/withdrawals/${withdrawalRef.id}`,
-      metadata: { walletAddress, investmentId, speed, fee },
-      createdAt: serverTimestamp(),
-    });
+  const response = await fetch('/api/settle', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ investmentId, walletAddress, speed, fee })
   });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Settlement failed.');
+  }
 }
 
 

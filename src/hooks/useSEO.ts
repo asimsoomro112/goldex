@@ -8,92 +8,92 @@ interface SEOConfig {
 
 const SEO_MAP: Record<string, SEOConfig> = {
   '/': {
-    title: 'GoldEx | AI-Powered Gold Trading & Yield Arbitrage',
-    description: 'Maximize your wealth with GoldEx, the premier AI-powered gold trading and automated arbitrage platform. Benefit from instant yield, smart compound reinvesting, and institutional-grade security.'
+    title: 'GoldEx | Gold Investment Platform – Earn Daily Profit',
+    description: 'Invest in gold-linked assets with GoldEx. Deposit USDT (BEP20), earn daily profit, and withdraw when ready. All deposits verified on-chain.'
   },
   '/about': {
-    title: 'About Us | Institutional Gold Arbitrage | GoldEx',
-    description: 'Discover the team, technologies, and institutional liquidity sources driving the GoldEx AI gold trading and arbitrage algorithms.'
+    title: 'About Us | GoldEx Gold Investment Platform',
+    description: 'Learn about the GoldEx team, mission, and the technology behind our gold-linked daily profit platform.'
   },
   '/how-it-works': {
-    title: 'How It Works | AI Gold Arbitrage System | GoldEx',
-    description: 'Learn how GoldEx AI agents identify gold market discrepancies and arbitrage price spreads in milliseconds to secure daily yields.'
+    title: 'How It Works | GoldEx Gold Investment',
+    description: 'See how GoldEx works: deposit USDT, earn daily profit from gold price movements, and withdraw your earnings anytime after $50.'
   },
   '/pricing': {
-    title: 'Pricing & Investment Plans | GoldEx Yield Suite',
-    description: 'Explore the GoldEx pricing plans: Starter, Growth, and Elite. Invest principal starting from $50 and earn 0.5% - 1.5% daily yields.'
+    title: 'Investment Tiers & Plans | GoldEx',
+    description: 'Explore GoldEx investment tiers: Starter, Growth, and Elite. Start investing from just $50 USDT and earn daily returns.'
   },
   '/referral': {
-    title: 'Referral Program | Compound Affiliate Commissions | GoldEx',
-    description: 'Share your unique referral link to earn dynamic commission rewards on your invitees deposits and active portfolios.'
+    title: 'Referral Program | Earn Commission | GoldEx',
+    description: 'Share your referral link and earn commission on deposits made by people you invite to GoldEx.'
   },
   '/terms': {
-    title: 'Terms of Service | Legal Terms & Agreements | GoldEx',
-    description: 'Review the official terms of service, platform usage rules, and agreements governing GoldEx investments.'
+    title: 'Terms of Service | GoldEx',
+    description: 'Review the official terms of service and platform usage rules governing GoldEx investments.'
   },
   '/privacy': {
-    title: 'Privacy Policy | Data Protection & Security | GoldEx',
-    description: 'Learn how GoldEx protects, encrypts, and handles your user account credentials, transaction logs, and personal information.'
+    title: 'Privacy Policy | GoldEx',
+    description: 'Learn how GoldEx protects and handles your account data, transaction records, and personal information.'
   },
   '/risk-disclosure': {
-    title: 'Risk Disclosure Statement | Safe Trading Guide | GoldEx',
-    description: 'Important risk disclosure details. Understand gold price volatility, market risks, and platform security declarations.'
+    title: 'Risk Disclosure | GoldEx',
+    description: 'Important risk information. Understand gold price volatility, market risks, and investment considerations.'
   },
   '/compliance': {
-    title: 'Regulatory Compliance & Audits | GoldEx Security',
-    description: 'GoldEx operates with complete compliance standards, external audits, and smart contract verification for ultimate transparency.'
+    title: 'Compliance & Security | GoldEx',
+    description: 'GoldEx compliance standards, on-chain deposit verification, and platform security measures.'
   },
   '/fees': {
-    title: 'Fees & Processing Speeds | Transparent Structure | GoldEx',
-    description: 'Understand the standard processing fee (8% in 24-48 hours) versus express fee (12% in under 1 hour) and 0% compounding reinvestments.'
+    title: 'Fees & Processing | GoldEx',
+    description: 'Transparent fee structure: Standard withdrawal (8%, 24-48 hours) vs Express (12%, under 1 hour). No hidden charges.'
   },
   '/referral-policy': {
-    title: 'Referral Terms & Policy Guidelines | GoldEx Affiliate',
-    description: 'Read the guidelines, policies, and anti-abuse protocols governing the GoldEx affiliate reward program.'
+    title: 'Referral Policy | GoldEx',
+    description: 'Read the guidelines and policies governing the GoldEx referral commission program.'
   },
   '/login': {
-    title: 'Sign In | Access Your GoldEx Account Dashboard',
-    description: 'Securely log in to your GoldEx portfolio manager to track live earnings, settle portfolios, or compound yields.'
+    title: 'Sign In | GoldEx',
+    description: 'Log in to your GoldEx account to track earnings, manage investments, and withdraw profits.'
   },
   '/register': {
-    title: 'Create Account | Join GoldEx Yield Arbitrage Suite',
-    description: 'Sign up for a free account today. Start investing with as little as $50 and watch your gold assets compound daily.'
+    title: 'Create Account | GoldEx',
+    description: 'Sign up for a free GoldEx account. Start investing with as little as $50 USDT and earn daily profit.'
   },
   '/dashboard': {
-    title: 'Dashboard Overview | GoldEx Wealth Manager',
-    description: 'Track your total balance, active locked principal, withdrawable profit ledger, and recent financial transactions in real time.'
+    title: 'Dashboard | GoldEx',
+    description: 'Track your balance, active investments, daily profit, and withdrawal history in real time.'
   },
   '/dashboard/invest': {
-    title: 'Live Portfolios & Active Investments | GoldEx Assets',
-    description: 'View active portfolios, monitor daily profit ranges, and settle active investments to withdraw accrued yields.'
+    title: 'Invest | GoldEx',
+    description: 'Make a new investment, view active deposits, and track your earning progress.'
   },
   '/dashboard/profit': {
-    title: 'Daily Yield History & Performance Ledger | GoldEx Ledger',
-    description: 'Analyze complete daily profit distributions, historical performance charts, and direct ledger logs.'
+    title: 'Profit History | GoldEx',
+    description: 'View your daily profit entries, historical earnings, and performance over time.'
   },
   '/dashboard/referrals': {
-    title: 'My Affiliates & Commission Earnings | GoldEx Partners',
-    description: 'Track your referred users, monitor team volumes, and inspect received affiliate commission rewards.'
+    title: 'My Referrals | GoldEx',
+    description: 'Track your referred users and commission earnings from the GoldEx referral program.'
   },
   '/dashboard/ai-agent': {
-    title: 'GoldEx AI Trading Agent | Real-time Market Arbitrage',
-    description: 'Interact with our advanced AI trading engine to view real-time gold price feed analysis and bot logs.'
+    title: 'AI Assistant | GoldEx',
+    description: 'Chat with the GoldEx AI assistant for help with your investments, profit projections, and platform questions.'
   },
   '/dashboard/withdraw': {
-    title: 'Withdraw & Compound Reinvest | GoldEx Gateway',
-    description: 'Settle and withdraw profits to your BEP20 wallet or compound reinvest to increase your active principal by +5%.'
+    title: 'Withdraw | GoldEx',
+    description: 'Withdraw your accumulated profit to your BEP20 wallet or reinvest to grow your balance.'
   },
   '/dashboard/settings': {
-    title: 'Security & Account Settings | GoldEx Profile',
-    description: 'Manage Google Authenticator 2FA, update personal details, verify KYC status, and register approved payout addresses.'
+    title: 'Account Settings | GoldEx',
+    description: 'Manage your profile, security settings, and registered payout wallet addresses.'
   },
   '/dashboard/support': {
-    title: 'Help Desk & Technical Support Hub | GoldEx Support',
-    description: 'Submit technical inquiries or open support tickets to connect with our dedicated customer experience staff.'
+    title: 'Support | GoldEx',
+    description: 'Get help with your account, deposits, withdrawals, or any platform questions.'
   },
   '/admin': {
-    title: 'Admin Operations Control Center | GoldEx Core',
-    description: 'Institutional-grade administrator console for deposit audits, KYC verification, global yield distributions, and support management.'
+    title: 'Admin Panel | GoldEx',
+    description: 'Administrator console for deposit verification, user management, and platform operations.'
   }
 };
 

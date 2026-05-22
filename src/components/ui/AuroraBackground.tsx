@@ -9,6 +9,8 @@ export function AuroraBackground() {
     let   W = canvas.width  = window.innerWidth;
     let   H = canvas.height = window.innerHeight;
     let   t = 0;
+    let raf = 0;
+    let stopped = false;
 
     const orbs = [
       { x: 0.2, y: 0.3, r: 0.45, color: 'rgba(212,175,55,',  speed: 0.0003, phase: 0 },
@@ -18,9 +20,10 @@ export function AuroraBackground() {
     ];
 
     const draw = () => {
+      if (stopped || document.hidden) return;
       ctx.clearRect(0, 0, W, H);
-      // Deep void base
-      ctx.fillStyle = '#07070D';
+      const rootStyles = getComputedStyle(document.documentElement);
+      ctx.fillStyle = rootStyles.getPropertyValue('--aurora-bg').trim() || '#07070D';
       ctx.fillRect(0, 0, W, H);
 
       orbs.forEach(orb => {
@@ -47,16 +50,38 @@ export function AuroraBackground() {
       ctx.fillRect(0, scanY - 60, W, 120);
 
       t++;
-      requestAnimationFrame(draw);
+      raf = requestAnimationFrame(draw);
     };
 
-    const raf = requestAnimationFrame(draw);
+    const start = () => {
+      if (!stopped && raf === 0 && !document.hidden) {
+        raf = requestAnimationFrame(draw);
+      }
+    };
+    const stop = () => {
+      if (raf !== 0) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    start();
     const onResize = () => {
       W = canvas.width  = window.innerWidth;
       H = canvas.height = window.innerHeight;
     };
     window.addEventListener('resize', onResize);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      stopped = true;
+      stop();
+      window.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   return (

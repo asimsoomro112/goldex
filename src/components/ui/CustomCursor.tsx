@@ -1,15 +1,26 @@
 import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export function CustomCursor() {
+  const location = useLocation();
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const pos     = useRef({ x: 0, y: 0 });
   const ring    = useRef({ x: 0, y: 0 });
   const raf     = useRef<number | null>(null);
+  const disabled = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin');
 
   useEffect(() => {
-    // Check if device supports pointer: fine
+    if (disabled) return;
     if (window.matchMedia('(pointer: coarse)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const stopLoop = () => {
+      if (raf.current !== null) {
+        cancelAnimationFrame(raf.current);
+        raf.current = null;
+      }
+    };
 
     const onMove = (e: MouseEvent) => {
       pos.current = { x: e.clientX, y: e.clientY };
@@ -32,6 +43,10 @@ export function CustomCursor() {
     };
 
     const lerp = () => {
+      if (document.hidden) {
+        raf.current = null;
+        return;
+      }
       ring.current.x += (pos.current.x - ring.current.x) * 0.12;
       ring.current.y += (pos.current.y - ring.current.y) * 0.12;
       if (ringRef.current) {
@@ -41,13 +56,28 @@ export function CustomCursor() {
       raf.current = requestAnimationFrame(lerp);
     };
 
+    const startLoop = () => {
+      if (raf.current === null && !document.hidden) {
+        raf.current = requestAnimationFrame(lerp);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) stopLoop();
+      else startLoop();
+    };
+
     document.addEventListener('mousemove', onMove);
-    raf.current = requestAnimationFrame(lerp);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    startLoop();
     return () => {
       document.removeEventListener('mousemove', onMove);
-      if (raf.current !== null) cancelAnimationFrame(raf.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      stopLoop();
     };
-  }, []);
+  }, [disabled]);
+
+  if (disabled) return null;
 
   return (
     <>

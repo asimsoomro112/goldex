@@ -1,74 +1,73 @@
-# ⚜️ GoldEx — Premium Gold Investment & Trading Platform
+# GoldEx
 
-GoldEx is a high-performance digital gold investment platform combining physical-backed asset tracking, live gold market indicators, custom KYC/AML desks, and an interactive Gemini AI financial helper. Built on a premium glassmorphic Noir theme, it provides a seamless and secure gold trading simulation.
+GoldEx is a React, Vite, Express, Firebase, and Vercel-ready gold-linked investment dashboard with Auth, Firestore records, admin review flows, USDT BEP20 deposits, withdrawals, support tickets, email notifications, live market pricing, and Gemini-powered assistant/KYC helpers.
 
----
+## Local Run
 
-## ✨ Features
-
-- **📊 Live XAU spot pricing:** Integrated with Metalprice API for precise real-time spot updates.
-- **🛡️ Secure KYC & Transactions:** Dynamic document uploads, Binance Smart Chain (USDT BEP20) manual deposit desks, and automated security rule configurations.
-- **🤖 Gemini AI Advisor:** On-platform AI assistant that helps users understand gold asset trends and management.
-- **📧 Zero-Attachment Email System:** Automatic hosted asset detection that ensures emails land in Gmail with premium layouts and zero clip tags.
-- **⚡ Vercel Serverless Ready:** Pre-configured paths mapping to stateless endpoints backed by Firestore.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** React, Vite, Framer Motion, Recharts, TailwindCSS
-- **Backend:** Node.js, Express, tsx, esbuild
-- **Serverless Functions:** Vercel Lambdas
-- **Database & Auth:** Firebase Authentication & Cloud Firestore
-- **Integrations:** Nodemailer (Gmail SMTP), Cloudinary (Avatar Uploads), Gemini AI Studio SDK
-
----
-
-## 🚀 Setup & Local Execution
-
-### Prerequisites
-Ensure you have [Node.js](https://nodejs.org/) installed.
-
-### 1. Install Dependencies
 ```bash
 npm install
-```
-
-### 2. Configure Environment Variables
-Create a `.env` file in the root directory. Use `.env.example` as a template:
-
-```bash
-# SMTP Credentials
-SMTP_USER="your-email@gmail.com"
-GMAIL_APP_PASSWORD="your-google-app-password"
-MAIL_FROM="GoldEx <your-email@gmail.com>"
-
-# API Keys
-GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-METALPRICE_API_KEY="YOUR_METALPRICE_API_KEY"
-
-# Deposit Address
-VITE_USDT_BEP20_ADDRESS="your-usdt-bep20-wallet-address"
-
-# Media Uploads (Cloudinary)
-VITE_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-VITE_CLOUDINARY_UPLOAD_PRESET="your-upload-preset"
-```
-
-### 3. Run Locally
-Start the development Express server and Vite builder:
-```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the application.
 
----
+Open `http://localhost:3000`.
 
-## 📦 Deployment on Vercel
+## Production Build
 
-The repository is pre-configured to run as a serverless application on Vercel. 
+```bash
+npm run build
+npm start
+```
 
-1. Push to your GitHub repository.
-2. Link the repository to your Vercel Dashboard.
-3. Configure the environment variables matching your `.env` file in **Vercel Settings > Environment Variables**.
-4. Deploy!
+The production server serves `dist/` and exposes the same `/api/*` routes used by Vercel.
+
+## Required Launch Environment
+
+Copy `.env.example` to `.env` for local development and configure the same keys in Vercel:
+
+```bash
+GEMINI_API_KEY="..."
+METALPRICE_API_KEY="..."
+SMTP_USER="your-gmail@gmail.com"
+GMAIL_APP_PASSWORD="your-google-app-password"
+MAIL_FROM="GoldEx <your-gmail@gmail.com>"
+
+VITE_FIREBASE_API_KEY="..."
+VITE_FIREBASE_AUTH_DOMAIN="..."
+VITE_FIREBASE_PROJECT_ID="..."
+VITE_FIREBASE_STORAGE_BUCKET="..."
+VITE_FIREBASE_MESSAGING_SENDER_ID="..."
+VITE_FIREBASE_APP_ID="..."
+VITE_FIREBASE_MEASUREMENT_ID="..."
+
+FIREBASE_SERVICE_ACCOUNT='{"type":"service_account", "...":"..."}'
+VITE_USDT_BEP20_ADDRESS="0xYOUR_REAL_BEP20_USDT_WALLET"
+
+VITE_CLOUDINARY_CLOUD_NAME="..."
+VITE_CLOUDINARY_UPLOAD_PRESET="..."
+APP_URL="https://your-production-domain.com"
+```
+
+`VITE_USDT_BEP20_ADDRESS` must be a real `0x...` BEP20 address before deposits are accepted. If it is missing, the app safely disables deposit actions instead of showing a fake wallet.
+
+## Deploy
+
+1. Push the repo to GitHub.
+2. Create/import the project in Vercel.
+3. Add the environment variables above in Vercel Project Settings.
+4. Deploy with the default `npm run build` command.
+5. Deploy `firestore.rules` to Firebase.
+
+## Launch Checks
+
+```bash
+npm run build
+```
+
+Then confirm:
+
+- `/api/health` returns `{ "status": "ok" }`.
+- `/api/gold-price` returns a live price or configured fallback.
+- Firebase Auth domains include your production domain.
+- Firestore rules are deployed.
+- Gmail App Password and Firebase Admin credentials are active.
+- The real BEP20 deposit wallet is set in both local and production environments.

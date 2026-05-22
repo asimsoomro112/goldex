@@ -28,7 +28,11 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register({ name, email, password, referral });
-      await sendEmail('registration', { to: email, name });
+      try {
+        await sendEmail('registration', { to: email, name });
+      } catch (emailErr) {
+        console.warn('Registration email dispatch failed:', emailErr);
+      }
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error: any) {
@@ -42,7 +46,11 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       const googleUser = await loginWithGoogle(referral);
-      await sendEmail('registration', { to: googleUser.email, name: googleUser.displayName || 'Google user' });
+      try {
+        await sendEmail('registration', { to: googleUser.email, name: googleUser.displayName || 'Google user' });
+      } catch (emailErr) {
+        console.warn('Registration email dispatch failed:', emailErr);
+      }
       toast.success('Account ready!');
       navigate('/dashboard');
     } catch (error: any) {
@@ -157,7 +165,7 @@ export function RegisterPage() {
         </button>
 
         <p className="text-center font-sans text-[14px] text-text-secondary mt-6">
-          Already have an account? <Link to="/login" className="text-gold-500 font-medium relative group cursor-none">
+          Already have an account? <Link to="/login" className="text-gold-500 font-medium relative group">
             Sign in
             <span className="absolute bottom-[-2px] left-0 w-full h-[1px] bg-gold-500 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
           </Link>

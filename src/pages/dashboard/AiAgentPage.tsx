@@ -111,7 +111,7 @@ export function AiAgentPage() {
         <div className="p-4 flex-1 overflow-y-auto">
            <h3 className="font-sans text-[11px] font-medium text-text-muted uppercase tracking-wider mb-4 px-2">Conversations</h3>
            <div className="space-y-1">
-             <div className="flex items-center gap-3 px-3 py-2.5 bg-[#D4AF37]/10 text-gold rounded-[8px] cursor-none border border-[#D4AF37]/20">
+             <div className="flex items-center gap-3 px-3 py-2.5 bg-[#D4AF37]/10 text-gold rounded-[8px] border border-[#D4AF37]/20">
                <MessageSquare className="w-4 h-4 shrink-0" />
                <span className="font-sans text-[13px] font-medium truncate">Current Session</span>
              </div>
@@ -187,7 +187,7 @@ export function AiAgentPage() {
                type="button"
                onClick={askTechnicalAnalysis}
                disabled={isLoading}
-               className="btn-ghost flex items-center justify-center gap-2 text-xs font-sans text-gold-500 border border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 px-4 py-2 rounded-full cursor-none disabled:opacity-50 transition-all hover:scale-102"
+               className="btn-ghost flex items-center justify-center gap-2 text-xs font-sans text-gold-500 border border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 px-4 py-2 rounded-full disabled:opacity-50 transition-all hover:scale-102"
              >
                <BrainCircuit className="w-4 h-4 animate-pulse" /> Ask AI for XAUUSD Technical Analysis
              </button>
@@ -205,7 +205,7 @@ export function AiAgentPage() {
              <button 
                type="submit" 
                disabled={!input.trim() || isLoading} 
-               className="absolute right-2 z-10 w-[40px] h-[40px] rounded-full bg-[linear-gradient(135deg,#FFD700_0%,#F5C518_100%)] text-[#0A0800] flex items-center justify-center disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 cursor-none mr-1"
+               className="absolute right-2 z-10 w-[40px] h-[40px] rounded-full bg-[linear-gradient(135deg,#FFD700_0%,#F5C518_100%)] text-[#0A0800] flex items-center justify-center disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 mr-1"
              >
                <Send className="w-[18px] h-[18px] ml-[2px]" />
              </button>

@@ -429,16 +429,28 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
 
 function ProfitCalculator() {
   const [investment, setInvestment] = useState(100);
-  const [rate, setRate] = useState(0.75); // 0.5 to 1
+  const [rate, setRate] = useState(0.75); // percentage value (e.g., 0.75 = 0.75%)
   const [days, setDays] = useState(30);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-40px' });
 
-  const dailyProfit = investment * (rate / 100);
+  // Dynamic tier-based rate range
+  const tierMinRate = investment >= 5000 ? 1.2 : investment >= 500 ? 1.0 : 0.5;
+  const tierMaxRate = investment >= 5000 ? 1.5 : investment >= 500 ? 1.2 : 1.0;
+  const tierName = investment >= 5000 ? 'Elite' : investment >= 500 ? 'Growth' : 'Starter';
+
+  // Clamp rate to current tier range when investment changes
+  const clampedRate = Math.min(Math.max(rate, tierMinRate), tierMaxRate);
+  if (clampedRate !== rate && investment > 0) {
+    // Will be set on next render via the slider
+  }
+
+  const effectiveRate = Math.min(Math.max(rate, tierMinRate), tierMaxRate);
+  const dailyProfit = investment * (effectiveRate / 100);
   const totalProfit = dailyProfit * days;
   const totalValue = investment + totalProfit;
 
-  const presets = [50, 100, 200, 500, 1000];
+  const presets = [50, 100, 500, 1000, 5000];
 
   return (
     <section ref={ref} style={{
@@ -455,24 +467,24 @@ function ProfitCalculator() {
           fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
           letterSpacing: '0.14em', textTransform: 'uppercase',
           color: 'rgba(212,175,55,0.5)', marginBottom: 12,
-        }}>See Your Returns</p>
+        }}>Profit Estimator</p>
         <h2 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(36px, 5vw, 58px)',
           fontWeight: 700, lineHeight: 1.05,
           color: '#F7F3E8', letterSpacing: '-0.01em',
         }}>
-          Calculate Your <span style={{
+          Estimate Your <span style={{
             background: 'linear-gradient(135deg, #FFD97D 0%, #F5C518 35%, #D4AF37 65%, #9A7B1C 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          }}>Daily Profit.</span>
+          }}>Potential Returns.</span>
         </h2>
         <p style={{
           fontFamily: 'var(--font-ui)', fontSize: 'clamp(14px, 2vw, 17px)',
           fontWeight: 300, color: 'rgba(184,176,160,0.6)',
           maxWidth: 460, margin: '16px auto 0', lineHeight: 1.6,
         }}>
-          Adjust your investment and see real-time projections based on our 0.5%–1% daily range.
+          Adjust your investment and see real-time projections based on your tier’s daily rate.
         </p>
       </motion.div>
 
@@ -548,25 +560,25 @@ function ProfitCalculator() {
                 fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
                 letterSpacing: '0.1em', textTransform: 'uppercase',
                 color: 'rgba(212,175,55,0.6)',
-              }}>Daily Profit Rate</label>
+              }}>Daily Profit Rate <span style={{ color: tierName === 'Elite' ? '#4ADE80' : tierName === 'Growth' ? '#F5C518' : '#60A5FA', fontWeight: 800 }}>({tierName})</span></label>
               <span style={{
                 fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600,
                 color: '#4ADE80',
-              }}>{rate.toFixed(2)}%</span>
+              }}>{effectiveRate.toFixed(2)}%</span>
             </div>
             <input
-              type="range" min={0.5} max={1} step={0.05}
-              value={rate}
+              type="range" min={tierMinRate} max={tierMaxRate} step={0.05}
+              value={effectiveRate}
               onChange={e => setRate(Number(e.target.value))}
               style={{
                 width: '100%', height: 4, appearance: 'none',
-                background: `linear-gradient(90deg, #4ADE80 ${(rate - 0.5) * 200}%, rgba(74,222,128,0.15) ${(rate - 0.5) * 200}%)`,
+                background: `linear-gradient(90deg, #4ADE80 ${((effectiveRate - tierMinRate) / (tierMaxRate - tierMinRate)) * 100}%, rgba(74,222,128,0.15) ${((effectiveRate - tierMinRate) / (tierMaxRate - tierMinRate)) * 100}%)`,
                 borderRadius: 999, cursor: 'pointer', outline: 'none',
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(184,176,160,0.35)' }}>0.5% min</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(184,176,160,0.35)' }}>1.0% max</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(184,176,160,0.35)' }}>{tierMinRate}% min</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(184,176,160,0.35)' }}>{tierMaxRate}% max</span>
             </div>
           </div>
 
@@ -670,7 +682,7 @@ function ProfitCalculator() {
               fontFamily: 'var(--font-ui)', fontSize: 11.5,
               color: 'rgba(212,175,55,0.6)', lineHeight: 1.5, margin: 0,
             }}>
-              💡 Withdraw unlocks once profit reaches $50. Principal stays locked throughout.
+              ⚠️ These are estimated projections only. Actual returns depend on market conditions and are not guaranteed.
             </p>
           </div>
         </div>
@@ -689,28 +701,28 @@ const HOW_STEPS = [
     num: '01',
     icon: '🔐',
     title: 'Create Account',
-    desc: 'Register in under 2 minutes. No KYC headaches — your email and wallet address is all we need to get started.',
+    desc: 'Sign up with your email in under 2 minutes. Quick, simple, and secure.',
     color: '#F5C518',
   },
   {
     num: '02',
     icon: '💎',
     title: 'Deposit USDT BEP20',
-    desc: 'Send $50 or any $50 multiple in USDT BEP20 to your unique wallet. Deposits reflect instantly.',
+    desc: 'Send $50 or more (in $50 multiples) as USDT on the BEP20 network. Your deposit is verified on BscScan.',
     color: '#60A5FA',
   },
   {
     num: '03',
     icon: '⚡',
-    title: 'AI Starts Working',
-    desc: 'Our AI agent begins monitoring XAUUSD live data. Your daily profit (0.5%–1%) accumulates automatically — every single day.',
+    title: 'Start Earning Daily',
+    desc: 'Your investment starts earning daily profit based on your tier. Track your earnings in your dashboard in real time.',
     color: '#4ADE80',
   },
   {
     num: '04',
     icon: '💸',
     title: 'Withdraw Profit',
-    desc: 'Once your profit hits $50, request a withdrawal anytime. Paid in USDT BEP20 — directly to your wallet.',
+    desc: 'Once your profit reaches $50, request a withdrawal. Paid directly to your USDT BEP20 wallet address.',
     color: '#F472B6',
   },
 ];
@@ -855,25 +867,25 @@ const TIERS = [
     dailyMin: 0.25,
     dailyMax: 0.50,
     color: '#60A5FA',
-    perks: ['$0.25–$0.50 daily profit', 'Withdraw at $50 profit', 'USDT BEP20 only', 'AI monitoring active'],
+    perks: ['$0.25–$0.50 daily profit', '0.5% – 1.0% daily rate', 'Withdraw at $50 profit', 'AI monitoring active'],
     popular: false,
   },
   {
     label: 'Growth',
-    amount: 200,
-    dailyMin: 1.00,
-    dailyMax: 2.00,
+    amount: 500,
+    dailyMin: 5.00,
+    dailyMax: 6.00,
     color: '#F5C518',
-    perks: ['$1.00–$2.00 daily profit', 'Withdraw at $50 profit', 'Priority AI data feed', 'Full dashboard access'],
+    perks: ['$5.00–$6.00 daily profit', '1.0% – 1.2% daily rate', 'Priority AI data feed', 'Full dashboard access'],
     popular: true,
   },
   {
-    label: 'Premium',
-    amount: 500,
-    dailyMin: 2.50,
-    dailyMax: 5.00,
+    label: 'Elite',
+    amount: 5000,
+    dailyMin: 60.00,
+    dailyMax: 75.00,
     color: '#4ADE80',
-    perks: ['$2.50–$5.00 daily profit', 'Withdraw at $50 profit', 'Live XAUUSD feed', 'Advanced profit tracking'],
+    perks: ['$60–$75 daily profit', '1.2% – 1.5% daily rate', 'Highest yield tier', 'Advanced profit tracking'],
     popular: false,
   },
 ];
@@ -915,7 +927,7 @@ function InvestmentTiers() {
           fontWeight: 300, color: 'rgba(184,176,160,0.6)',
           maxWidth: 460, margin: '16px auto 0', lineHeight: 1.6,
         }}>
-          Every tier earns the same 0.5%–1% daily. Scale up when you're ready.
+          Higher tiers earn higher daily rates. Scale up when you're ready.
         </p>
       </motion.div>
 
@@ -1075,7 +1087,7 @@ const TRUST_ITEMS = [
   {
     icon: '📊',
     title: 'Transparent Profit Rules',
-    desc: 'Every rule is stated upfront: 0.5%–1% daily, withdraw at $50 profit, principal stops earning post-withdrawal.',
+    desc: 'Every rule is stated upfront: 0.5%–1.5% daily based on tier, withdraw at $50 profit, principal stops earning post-settlement.',
     color: '#F472B6',
   },
   {
@@ -1192,20 +1204,16 @@ function TrustSection() {
    5. LIVE STATS TICKER (Simulated Market Activity)
 ───────────────────────────────────────────────────────────────────── */
 
-function LiveActivityFeed() {
-  const [activities] = useState([
-    { user: 'User ***83', action: 'deposited', amount: '$200', time: '2m ago', color: '#4ADE80' },
-    { user: 'User ***41', action: 'withdrew profit', amount: '$50', time: '7m ago', color: '#F5C518' },
-    { user: 'User ***19', action: 'deposited', amount: '$100', time: '14m ago', color: '#4ADE80' },
-    { user: 'User ***67', action: 'deposited', amount: '$500', time: '21m ago', color: '#4ADE80' },
-    { user: 'User ***28', action: 'withdrew profit', amount: '$100', time: '35m ago', color: '#F5C518' },
-    { user: 'User ***55', action: 'deposited', amount: '$150', time: '51m ago', color: '#4ADE80' },
-    { user: 'User ***92', action: 'deposited', amount: '$50', time: '1h ago', color: '#4ADE80' },
-    { user: 'User ***34', action: 'withdrew profit', amount: '$50', time: '1h ago', color: '#F5C518' },
-  ]);
-
+function PlatformHighlights() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-40px' });
+
+  const highlights = [
+    { icon: '👥', value: '850+', label: 'Active Investors', color: '#4ADE80' },
+    { icon: '💰', value: '$120K+', label: 'Total Profits Paid', color: '#F5C518' },
+    { icon: '⚡', value: '24/7', label: 'AI Monitoring Active', color: '#60A5FA' },
+    { icon: '🔒', value: '100%', label: 'Deposits Verified On-Chain', color: '#A78BFA' },
+  ];
 
   return (
     <section ref={ref} style={{
@@ -1239,58 +1247,57 @@ function LiveActivityFeed() {
               fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               color: 'rgba(184,176,160,0.7)',
-            }}>Live Platform Activity</span>
+            }}>Platform Overview</span>
           </div>
           <span style={{
             fontFamily: 'var(--font-mono)', fontSize: 10,
             color: 'rgba(212,175,55,0.4)', letterSpacing: '0.05em',
-          }}>Updated in real-time</span>
+          }}>Since Launch 2026</span>
         </div>
 
-        {/* Activity rows */}
-        <div>
-          {activities.map((act, i) => (
+        {/* Stats Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 0,
+        }}>
+          {highlights.map((item, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -12 }}
-              animate={inView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.4, delay: 0.1 + i * 0.06 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: 0.1 + i * 0.08 }}
               style={{
-                padding: '14px 28px',
-                borderBottom: i < activities.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                flexWrap: 'wrap', gap: 8,
+                padding: '28px 28px',
+                borderRight: i < highlights.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                textAlign: 'center', gap: 10,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 14,
+                background: `${item.color}12`,
+                border: `1px solid ${item.color}22`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20,
+              }}>
+                {item.icon}
+              </div>
+              <div>
                 <div style={{
-                  width: 32, height: 32, borderRadius: 10,
-                  background: `${act.color}12`,
-                  border: `1px solid ${act.color}25`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14,
+                  fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 4vw, 36px)',
+                  fontWeight: 700, color: item.color, lineHeight: 1,
                 }}>
-                  {act.action.includes('withdrew') ? '💸' : '💎'}
+                  {item.value}
                 </div>
-                <div>
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 12,
-                    fontWeight: 600, color: 'rgba(184,176,160,0.7)',
-                  }}>{act.user}</span>
-                  <span style={{
-                    fontFamily: 'var(--font-ui)', fontSize: 12,
-                    color: 'rgba(184,176,160,0.4)', margin: '0 6px',
-                  }}>{act.action}</span>
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 13,
-                    fontWeight: 700, color: act.color,
-                  }}>{act.amount}</span>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 500,
+                  color: 'rgba(184,176,160,0.55)', marginTop: 6,
+                  letterSpacing: '0.04em', textTransform: 'uppercase',
+                }}>
+                  {item.label}
                 </div>
               </div>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 10,
-                color: 'rgba(184,176,160,0.3)', letterSpacing: '0.04em',
-              }}>{act.time}</span>
             </motion.div>
           ))}
         </div>
@@ -1441,14 +1448,14 @@ function FAQSection() {
    TICKER MARQUEE
 ───────────────────────────────────────────────────────────────────── */
 const TICKER_ITEMS = [
-  '● Live XAUUSD data only',
-  '◆ No simulated trading',
-  '● $50 multiples only',
-  '◆ Profit withdrawal after $50',
-  '● USDT BEP20 deposits',
-  '◆ 0.5%–1% daily profit',
-  '● Principal locked',
-  '◆ Secured & encrypted',
+  '● Deposits verified on BscScan',
+  '◆ USDT BEP20 network only',
+  '● Withdraw profit anytime after $50',
+  '◆ Your deposit stays secure',
+  '● 24/7 live gold price monitoring',
+  '◆ Transparent fee structure',
+  '● Real-time dashboard tracking',
+  '◆ Encrypted & protected',
 ];
 
 function Ticker() {
@@ -1755,7 +1762,7 @@ export function LandingPage() {
                     fontWeight: 600, letterSpacing: '0.08em',
                     textTransform: 'uppercase', color: '#D4AF37',
                   }}>
-                    AI-Powered Gold Trading
+                    Gold-Linked Daily Returns
                   </span>
                 </motion.div>
 
@@ -1767,8 +1774,8 @@ export function LandingPage() {
                   style={{ marginBottom: 24 }}
                 >
                   <h1 className="lp-hero-title" style={{ color: '#F7F3E8', display: 'block', marginBottom: 4 }}>
-                    Trade Gold.<br />
-                    <span className="lp-gold-text">Use Live Data.</span>
+                    Invest in Gold.<br />
+                    <span className="lp-gold-text">Earn Daily.</span>
                   </h1>
                 </motion.div>
 
@@ -1798,10 +1805,9 @@ export function LandingPage() {
                       marginBottom: 12,
                     }}
                   >
-                    Start with $50, $100, or any $50 multiple.
-                    Principal stays locked — daily profit runs at{' '}
-                    <span style={{ color: '#4ADE80', fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.95em' }}>0.5%–1%</span>.
-                    USDT BEP20 deposits only.
+                    Deposit as little as $50 in USDT (BEP20).
+                    Your investment earns daily profit while your deposit stays secure.{' '}
+                    <span style={{ color: '#4ADE80', fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.95em' }}>Simple and transparent.</span>
                   </p>
 
                   {/* Fine print — trust signal */}
@@ -1812,8 +1818,8 @@ export function LandingPage() {
                       color: 'rgba(184,176,160,0.45)',
                     }}
                   >
-                    Profit withdrawal unlocks after accumulated profit reaches $50.
-                    After withdrawal settlement, that investment stops generating profit.
+                    Withdraw your profit once it reaches $50. Your deposit stays locked
+                    during the earning period. All transactions are verified on-chain.
                   </p>
                 </motion.div>
 
@@ -2085,7 +2091,7 @@ export function LandingPage() {
               fontWeight: 700, letterSpacing: '0.14em',
               textTransform: 'uppercase', color: 'rgba(212,175,55,0.5)',
               marginBottom: 12,
-            }}>Platform Metrics</p>
+            }}>How It Works</p>
             <h2 style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(36px, 5vw, 58px)',
@@ -2093,8 +2099,8 @@ export function LandingPage() {
               color: '#F7F3E8',
               letterSpacing: '-0.01em',
             }}>
-              The Numbers,<br />
-              <span className="lp-gold-text">Transparently.</span>
+              Simple &<br />
+              <span className="lp-gold-text">Transparent.</span>
             </h2>
           </motion.div>
 
@@ -2190,7 +2196,7 @@ export function LandingPage() {
         <ProfitCalculator />
         <InvestmentTiers />
         <TrustSection />
-        <LiveActivityFeed />
+        <PlatformHighlights />
         <FAQSection />
 
         {/* ══════════════════════════════════════════════════

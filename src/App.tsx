@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Navigate, Outlet, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Routes, Route, Link, useLocation } from 'react-router-dom';
 
 // Public Layout Components
 import { MainLayout } from './layouts/MainLayout';
@@ -12,12 +12,20 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { LandingPage } from './pages/public/LandingPage';
 import { AboutPage, CompliancePage, FeesPage, HowItWorksPage, NotFoundPage, PricingPage, PrivacyPage, ReferralLandingPage, ReferralPolicyPage, RiskDisclosurePage, TermsPage } from './pages/public';
 import { LoginPage, RegisterPage } from './pages/auth';
-import { DashboardHome, InvestPage, ProfitHistoryPage, ReferralsPage, AiAgentPage, WithdrawPage, SettingsPage, SupportPage } from './pages/dashboard';
-import { AdminPage } from './pages/admin/AdminPage';
+const DashboardHome = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.DashboardHome })));
+const InvestPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.InvestPage })));
+const ProfitHistoryPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.ProfitHistoryPage })));
+const ReferralsPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.ReferralsPage })));
+const AiAgentPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.AiAgentPage })));
+const WithdrawPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.WithdrawPage })));
+const SettingsPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.SettingsPage })));
+const SupportPage = React.lazy(() => import('./pages/dashboard').then(m => ({ default: m.SupportPage })));
+const AdminPage = React.lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
+const OnboardingPage = React.lazy(() => import('./pages/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 import { Toaster } from 'react-hot-toast';
-import { CustomCursor } from './components/ui/CustomCursor';
 import { AuthProvider, useAuth } from './lib/auth';
-import { useDashboardData } from './lib/dashboardData';
+import { DashboardDataProvider, useDashboardData } from './lib/dashboardData';
+import { ThemeProvider } from './lib/theme';
 
 import { useSEO } from './hooks/useSEO';
 
@@ -26,14 +34,24 @@ function RouterSEO() {
   return null;
 }
 
+function RootSpinner() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 flex flex-col items-center justify-center gap-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#D4AF37] border-t-transparent" />
+      <span className="text-sm font-medium tracking-wide">Loading platform...</span>
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <RouterSEO />
-        <CustomCursor />
-        <Toaster position="top-right" />
-        <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <RouterSEO />
+          <Toaster position="top-right" />
+          <React.Suspense fallback={<RootSpinner />}>
+            <Routes>
           {/* Public Routes */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<LandingPage />} />
@@ -57,15 +75,18 @@ export default function App() {
 
           {/* Dashboard Routes */}
           <Route element={<RequireAuth />}>
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<DashboardHome />} />
-              <Route path="invest" element={<InvestPage />} />
-              <Route path="profit" element={<ProfitHistoryPage />} />
-              <Route path="referrals" element={<ReferralsPage />} />
-              <Route path="ai-agent" element={<AiAgentPage />} />
-              <Route path="withdraw" element={<WithdrawPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="support" element={<SupportPage />} />
+            <Route element={<OnboardingGuard />}>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<DashboardHome />} />
+                <Route path="invest" element={<InvestPage />} />
+                <Route path="profit" element={<ProfitHistoryPage />} />
+                <Route path="referrals" element={<ReferralsPage />} />
+                <Route path="ai-agent" element={<AiAgentPage />} />
+                <Route path="withdraw" element={<WithdrawPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="support" element={<SupportPage />} />
+              </Route>
             </Route>
           </Route>
 
@@ -74,9 +95,11 @@ export default function App() {
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            </Routes>
+          </React.Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -85,7 +108,7 @@ function RequireAdmin() {
   const { profile, loading: profileLoading } = useDashboardData(user?.uid);
 
   if (loading || profileLoading) {
-    return <div className="min-h-screen bg-dark-900 text-text-secondary flex items-center justify-center">Loading admin...</div>;
+    return <div className="min-h-screen bg-white dark:bg-dark-900 text-text-secondary flex items-center justify-center">Loading admin...</div>;
   }
 
   if (!user) {
@@ -94,9 +117,9 @@ function RequireAdmin() {
 
   if (profile?.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-dark-900 text-text-primary flex items-center justify-center px-4">
-        <div className="gc max-w-lg w-full p-8 bg-dark-950">
-          <h1 className="font-display text-2xl text-white mb-3">Access Denied</h1>
+      <div className="min-h-screen bg-white dark:bg-dark-900 text-text-primary flex items-center justify-center px-4">
+        <div className="gc max-w-lg w-full p-8 bg-white dark:bg-dark-950">
+          <h1 className="font-display text-2xl text-neutral-900 dark:text-white mb-3">Access Denied</h1>
           <p className="text-sm text-text-secondary leading-relaxed mb-6">
             You do not have the required permissions to access the administrator panel. Please return to the user dashboard.
           </p>
@@ -115,11 +138,44 @@ function RequireAuth() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-dark-900 text-text-secondary flex items-center justify-center">Loading account...</div>;
+    return <div className="min-h-screen bg-white dark:bg-dark-900 text-text-secondary flex items-center justify-center">Loading account...</div>;
   }
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <DashboardDataProvider uid={user.uid}>
+      <Outlet />
+    </DashboardDataProvider>
+  );
+}
+
+function OnboardingGuard() {
+  const { user } = useAuth();
+  const { profile, loading } = useDashboardData(user?.uid);
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 flex flex-col items-center justify-center gap-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#D4AF37] border-t-transparent" />
+        <span className="text-sm font-medium tracking-wide">Loading account details...</span>
+      </div>
+    );
+  }
+
+  const isOnboardingPath = location.pathname === '/onboarding';
+
+  if (profile && !profile.onboardingComplete) {
+    if (!isOnboardingPath) {
+      return <Navigate to="/onboarding" replace />;
+    }
+  } else if (profile && profile.onboardingComplete) {
+    if (isOnboardingPath) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <Outlet />;

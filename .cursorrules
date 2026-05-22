@@ -1,0 +1,56 @@
+# GoldEx Project — AI Agent Rules
+
+## Project Identity
+This is GoldEx: a gold investment platform with daily profit, referral bonus, 
+signup bonus, and USDT BEP20 deposits. Users want simplicity, trust, and 
+clear profit visibility.
+
+## Tech Stack
+- React 18 + Vite + TypeScript (strict)
+- TailwindCSS (utility-first, no custom CSS unless unavoidable)
+- Framer Motion (animations only — no CSS keyframes for complex animations)
+- Firebase Auth + Firestore (existing — do not replace)
+- React Router v6 (existing routing)
+- Recharts (existing charts — keep)
+
+## Design System Rules
+- Primary brand color: #D4AF37 (gold) — use as accent, not background
+- Base background light mode: #FAFAF8
+- Base background dark mode: #0F0F0E  
+- Text primary: color-neutral-900 (light) / color-neutral-50 (dark)
+- NEVER use glassmorphism backdrop-blur on primary content cards
+- Card style: bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl
+- Success/profit: text-emerald-500 — ONLY for actual profit numbers
+- Error/loss: text-red-500 — ONLY for actual negative values
+- CTA buttons: bg-[#D4AF37] text-neutral-900 font-semibold rounded-xl
+
+## Code Rules
+- TypeScript strict mode — no `any` types
+- All components as arrow functions: const ComponentName = () => {}
+- Custom hooks start with `use` prefix
+- All Firebase calls in /src/services/ directory only
+- No inline styles — Tailwind classes only
+- Every async function must have try/catch with proper error handling
+- Mobile-first: design for 390px then scale up
+
+## Folder Structure (enforce strictly)
+src/
+├── components/
+│   ├── ui/           # Reusable: Button, Card, Input, Badge, Modal
+│   ├── layout/       # Navbar, Sidebar, BottomNav, PageWrapper
+│   └── features/     # Domain: Dashboard, Invest, Wallet, Referral
+├── pages/            # Route-level components
+├── hooks/            # Custom React hooks
+├── services/         # Firebase + API calls only
+├── stores/           # Zustand or Context stores
+├── types/            # TypeScript interfaces
+├── utils/            # Pure helper functions
+└── assets/           # Static files
+
+## What NOT to do
+- Do NOT break existing Firebase Auth logic
+- Do NOT remove existing Firestore data models
+- Do NOT change environment variable names
+- Do NOT add new npm packages without asking first
+- Do NOT use `!important` in any styles
+- Do NOT use `position: fixed` without explaining why

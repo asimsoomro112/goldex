@@ -62,7 +62,7 @@ const PLANS = [
     img: '/images/Starter.png',
     features: [
       'Invest $50, $100, or any $50 multiple',
-      '0.5% - 1% daily profit range',
+      '0.5% - 1.0% daily profit range',
       'Principal remains locked',
       'Profit withdrawal after $50 minimum',
     ],
@@ -74,10 +74,10 @@ const PLANS = [
     accentColor: '#F472B6',
     img: '/images/Growth.png',
     features: [
-      'Invest any $50 multiple',
-      '0.5% - 1% daily profit range',
-      'Principal remains locked',
-      'Profit stops after withdrawal settlement',
+      'Invest any $50 multiple from $500',
+      '1.0% - 1.2% daily profit range',
+      'Higher yield than Starter tier',
+      'Priority AI data feed',
     ],
     cta: 'Select Growth Tier',
   },
@@ -87,10 +87,10 @@ const PLANS = [
     accentColor: '#60A5FA',
     img: '/images/Elite.png',
     features: [
-      'Invest any $50 multiple',
-      '0.5% - 1% daily profit range',
-      'USDT BEP20 deposits only',
-      'Live account records only',
+      'Invest any $50 multiple from $5,000',
+      '1.2% - 1.5% daily profit range',
+      'Highest yield tier available',
+      'Advanced profit tracking',
     ],
     cta: 'Select Elite Tier',
   },
@@ -98,7 +98,7 @@ const PLANS = [
 
 const FAQS = [
   { q: 'Is there a free trial?', a: 'No. The minimum verified deposit is $50.' },
-  { q: 'How is profit calculated?', a: 'Daily profit is calculated on the locked investment amount at a 0.5% to 1% daily range.' },
+  { q: 'How is profit calculated?', a: 'Daily profit is calculated on the locked investment amount. Starter tier earns 0.5%–1.0%, Growth tier earns 1.0%–1.2%, and Elite tier earns 1.2%–1.5% daily.' },
   { q: 'When can profit be withdrawn?', a: 'Profit can be withdrawn after accumulated profit reaches at least $50. After withdrawal settlement, that investment stops generating profit.' },
   { q: 'Which deposit method is supported?', a: 'Only USDT on BEP20 is supported.' },
 ];
@@ -167,7 +167,7 @@ export function PricingPage() {
                 maxWidth: 680, margin: '0 auto',
               }}
             >
-              Invest $50, $100, or any $50 multiple. Principal stays locked, daily profit ranges from 0.5% to 1%, and profit withdrawal unlocks after $50.
+              Invest $50, $100, or any $50 multiple. Principal stays locked, daily profit ranges from 0.5% up to 1.5% based on your tier, and profit withdrawal unlocks after $50.
             </motion.p>
           </div>
         </section>

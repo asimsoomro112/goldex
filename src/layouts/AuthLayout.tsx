@@ -3,15 +3,16 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { AuroraBackground } from '@/components/ui/AuroraBackground';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export function AuthLayout() {
   const location = useLocation();
   const isLogin = location.pathname === '/login';
 
   return (
-    <div className="min-h-screen flex text-[#E8E4D4]">
+    <div className="auth-shell min-h-screen flex text-text-primary">
       {/* Left side (Desktop Background & Aurora) */}
-      <div className="hidden lg:flex w-[55%] relative overflow-hidden bg-[#030305] flex-col justify-between">
+      <div className="hidden lg:flex w-[55%] relative overflow-hidden bg-dark-950 flex-col justify-between">
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img src="/images/Login Page Left Panel Background.png" alt="Auth Background" className="w-full h-full object-cover opacity-80 mix-blend-screen" />
         </div>
@@ -39,16 +40,17 @@ export function AuthLayout() {
         </div>
 
         <div className="p-12 relative z-10 text-center">
-          <p className="font-display italic text-[18px] text-[#E8E4D4]/50">
+          <p className="font-display italic text-[18px] text-text-muted">
             "Gold is the money of kings, silver is the money of gentlemen."
           </p>
         </div>
       </div>
 
       {/* Right side (Form Container) */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center items-center relative bg-[rgba(7,7,13,0.95)]">
+      <div className="w-full lg:w-[45%] flex flex-col justify-center items-center relative bg-dark-900">
+        <ThemeToggle compact className="absolute top-6 right-6 z-20" />
         <div className="absolute top-6 left-6 lg:hidden">
-           <Link to="/" className="flex items-center gap-[6px] text-text-muted hover:text-white transition-colors cursor-none">
+           <Link to="/" className="flex items-center gap-[6px] text-text-muted hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" /> <span className="font-sans font-medium text-[14px]">Home</span>
            </Link>
         </div>

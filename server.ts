@@ -7,6 +7,9 @@ import { generateGoldExAiResponse, analyzeKycDocument } from "./src/server/aiSer
 import { getGoldPriceSnapshot } from "./src/server/marketService";
 import { adminAuth, adminDb } from "./src/server/firebaseAdmin";
 import depositStatusHandler from "./api/deposit-status";
+import reinvestHandler from "./api/reinvest";
+import settleHandler from "./api/settle";
+import withdrawHandler from "./api/withdraw";
 
 const emailRateLimit = new Map<string, { count: number; resetAt: number }>();
 
@@ -188,6 +191,18 @@ async function startServer() {
 
   app.get("/api/deposit-status", async (req, res) => {
     await depositStatusHandler(req, res);
+  });
+
+  app.post("/api/reinvest", async (req, res) => {
+    await reinvestHandler(req, res);
+  });
+
+  app.post("/api/withdraw", async (req, res) => {
+    await withdrawHandler(req, res);
+  });
+
+  app.post("/api/settle", async (req, res) => {
+    await settleHandler(req, res);
   });
 
   // AI Chat endpoint
