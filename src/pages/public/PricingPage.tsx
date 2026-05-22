@@ -12,6 +12,16 @@ const STYLES = `
     --surface-900: #08080F;
     --font-display: 'Cormorant Garamond', Georgia, serif;
     --font-ui: 'Outfit', sans-serif;
+
+    --tier-starter: #D4AF37;
+    --tier-growth: #F472B6;
+    --tier-elite: #60A5FA;
+  }
+
+  :root[data-theme="light"] {
+    --tier-starter: #8B6914;
+    --tier-growth: #BE185D;
+    --tier-elite: #1D4ED8;
   }
 
   .pricing-title {
@@ -23,8 +33,8 @@ const STYLES = `
   }
 
   .tier-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.85) 0%, rgba(8,8,15,0.90) 100%);
-    border: 1px solid rgba(212,175,55,0.12);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 24px;
     overflow: hidden;
     position: relative;
@@ -32,25 +42,25 @@ const STYLES = `
     flex-direction: column;
     height: 100%;
     transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-card);
   }
 
   .tier-card:hover {
-    border-color: rgba(212,175,55,0.32);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,175,55,0.06);
+    border-color: var(--gb-hover);
+    box-shadow: var(--shadow-float), var(--glow-sm);
     transform: translateY(-5px);
   }
 
   .faq-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.4) 0%, rgba(8,8,15,0.6) 100%);
-    border: 1px solid rgba(212,175,55,0.08);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 16px;
     transition: all 0.25s ease;
   }
 
   .faq-card:hover {
-    border-color: rgba(212,175,55,0.22);
-    background: rgba(212,175,55,0.02);
+    border-color: var(--gb-hover);
+    background: var(--glass-hover);
   }
 `;
 
@@ -58,7 +68,7 @@ const PLANS = [
   {
     name: 'Starter',
     range: '$50 - $450',
-    accentColor: '#D4AF37',
+    accentColor: 'var(--tier-starter)',
     img: '/images/Starter.png',
     features: [
       'Invest $50, $100, or any $50 multiple',
@@ -71,7 +81,7 @@ const PLANS = [
   {
     name: 'Growth',
     range: '$500 - $4,950',
-    accentColor: '#F472B6',
+    accentColor: 'var(--tier-growth)',
     img: '/images/Growth.png',
     features: [
       'Invest any $50 multiple from $500',
@@ -84,7 +94,7 @@ const PLANS = [
   {
     name: 'Elite',
     range: '$5,000+',
-    accentColor: '#60A5FA',
+    accentColor: 'var(--tier-elite)',
     img: '/images/Elite.png',
     features: [
       'Invest any $50 multiple from $5,000',
@@ -148,7 +158,7 @@ export function PricingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="pricing-title"
-              style={{ color: '#F7F3E8', marginBottom: 20 }}
+              style={{ color: 'var(--text-bright)', marginBottom: 20 }}
             >
               Investment <span style={{
                 background: 'linear-gradient(135deg, #FFD97D 0%, #F5C518 35%, #D4AF37 65%, #9A7B1C 100%)',
@@ -163,7 +173,7 @@ export function PricingPage() {
               transition={{ delay: 0.1 }}
               style={{
                 fontSize: 'clamp(15px, 2vw, 18px)', fontWeight: 300,
-                lineHeight: 1.6, color: 'rgba(184,176,160,0.75)',
+                lineHeight: 1.6, color: 'var(--text-secondary)',
                 maxWidth: 680, margin: '0 auto',
               }}
             >
@@ -240,7 +250,7 @@ export function PricingPage() {
                       }}>Investment Tier</span>
                       <h3 style={{
                         fontFamily: 'var(--font-display)', fontSize: 26,
-                        fontWeight: 700, color: '#F7F3E8', lineHeight: 1.1,
+                        fontWeight: 700, color: 'var(--text-bright)', lineHeight: 1.1,
                       }}>{plan.name}</h3>
                     </div>
                   </div>
@@ -260,11 +270,11 @@ export function PricingPage() {
                     }}>
                       <div style={{
                         fontFamily: 'var(--font-mono)', fontSize: 'clamp(22px, 3vw, 26px)',
-                        fontWeight: 600, color: '#D4AF37',
+                        fontWeight: 600, color: 'var(--gold-500)',
                         letterSpacing: '-0.01em',
                       }}>{plan.range}</div>
                       <span style={{
-                        fontSize: 11, color: 'rgba(184,176,160,0.5)',
+                        fontSize: 11, color: 'var(--text-muted)',
                         letterSpacing: '0.04em', textTransform: 'uppercase',
                         marginTop: 4, display: 'block',
                       }}>Verified deposit range</span>
@@ -277,16 +287,16 @@ export function PricingPage() {
                           <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                             <div style={{
                               width: 18, height: 18, borderRadius: '50%',
-                              background: 'rgba(74,222,128,0.12)',
-                              border: '1px solid rgba(74,222,128,0.22)',
+                              background: 'color-mix(in srgb, var(--profit) 12%, transparent)',
+                              border: '1px solid color-mix(in srgb, var(--profit) 22%, transparent)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               marginTop: 2, flexShrink: 0,
                             }}>
-                              <Check style={{ width: 10, height: 10, color: '#4ADE80' }} />
+                              <Check style={{ width: 10, height: 10, color: 'var(--profit)' }} />
                             </div>
                             <span style={{
                               fontSize: 13, lineHeight: 1.45,
-                              color: 'rgba(232,228,212,0.85)',
+                              color: 'var(--text-primary)',
                               fontWeight: 300,
                             }}>{feat}</span>
                           </li>
@@ -306,15 +316,15 @@ export function PricingPage() {
                           transition: 'all 0.22s ease',
 
                           ...(isHovered ? {
-                            border: `1px solid ${plan.accentColor}40`,
-                            background: `linear-gradient(135deg, ${plan.accentColor}cc 0%, ${plan.accentColor} 100%)`,
-                            color: '#07070D',
-                            boxShadow: `0 6px 20px ${plan.accentColor}30`,
+                            border: `1px solid color-mix(in srgb, ${plan.accentColor} 25%, transparent)`,
+                            background: plan.accentColor,
+                            color: 'var(--b-900)',
+                            boxShadow: `0 6px 20px color-mix(in srgb, ${plan.accentColor} 18%, transparent)`,
                             fontWeight: 700,
                           } : {
-                            border: '1px solid rgba(212,175,55,0.15)',
-                            background: 'rgba(212,175,55,0.04)',
-                            color: 'rgba(184,176,160,0.8)',
+                            border: '1px solid color-mix(in srgb, var(--gold-500) 15%, transparent)',
+                            background: 'color-mix(in srgb, var(--gold-500) 4%, transparent)',
+                            color: 'var(--text-secondary)',
                           }),
                         }}
                       >

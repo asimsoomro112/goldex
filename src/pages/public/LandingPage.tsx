@@ -24,6 +24,16 @@ const STYLES = `
     --font-ui: 'Outfit', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+
+    --tier-starter: #60A5FA;
+    --tier-growth: #F5C518;
+    --tier-elite: #4ADE80;
+  }
+
+  :root[data-theme="light"] {
+    --tier-starter: #1D4ED8;
+    --tier-growth: #8B6914;
+    --tier-elite: #047857;
   }
 
   @keyframes floatA {
@@ -84,16 +94,16 @@ const STYLES = `
     background-clip: text;
   }
   .lp-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.85) 0%, rgba(8,8,15,0.90) 100%);
-    border: 1px solid rgba(212,175,55,0.14);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 20px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    box-shadow: var(--shadow-card);
   }
   .feature-card {
-    background: linear-gradient(145deg, rgba(13,12,26,0.80) 0%, rgba(7,7,13,0.90) 100%);
-    border: 1px solid rgba(212,175,55,0.10);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 22px;
     overflow: hidden;
     position: relative;
@@ -101,13 +111,13 @@ const STYLES = `
     cursor: default;
   }
   .feature-card:hover {
-    border-color: rgba(212,175,55,0.28);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(212,175,55,0.06);
+    border-color: var(--gb-hover);
+    box-shadow: var(--shadow-float), var(--glow-sm);
     transform: translateY(-4px);
   }
   .stat-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.7) 0%, rgba(8,8,15,0.8) 100%);
-    border: 1px solid rgba(212,175,55,0.12);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 18px;
     padding: 28px 24px;
     text-align: center;
@@ -116,8 +126,8 @@ const STYLES = `
     transition: border-color 0.3s, box-shadow 0.3s;
   }
   .stat-card:hover {
-    border-color: rgba(212,175,55,0.3);
-    box-shadow: 0 0 40px rgba(212,175,55,0.08);
+    border-color: var(--gb-hover);
+    box-shadow: var(--shadow-float), var(--glow-sm);
   }
 
   /* ── SCROLL CONTAINER — tall spacer ── */
@@ -246,7 +256,7 @@ function AnimatedStat({
         fontFamily: 'var(--font-ui)', fontSize: 12,
         fontWeight: 500, letterSpacing: '0.1em',
         textTransform: 'uppercase',
-        color: 'rgba(184,176,160,0.65)',
+        color: 'var(--text-secondary)',
       }}>
         {label}
       </div>
@@ -389,7 +399,7 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
         <h4 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 22, fontWeight: 700,
-          color: '#F7F3E8', marginBottom: 10,
+          color: 'var(--text-bright)', marginBottom: 10,
           letterSpacing: '0.01em',
         }}>
           {feature.label}
@@ -398,7 +408,7 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
         <p style={{
           fontFamily: 'var(--font-ui)',
           fontSize: 13.5, lineHeight: 1.7,
-          color: 'rgba(184,176,160,0.75)',
+          color: 'var(--text-secondary)',
           fontWeight: 300,
         }}>
           {feature.desc}
@@ -472,7 +482,7 @@ function ProfitCalculator() {
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(36px, 5vw, 58px)',
           fontWeight: 700, lineHeight: 1.05,
-          color: '#F7F3E8', letterSpacing: '-0.01em',
+          color: 'var(--text-bright)', letterSpacing: '-0.01em',
         }}>
           Estimate Your <span style={{
             background: 'linear-gradient(135deg, #FFD97D 0%, #F5C518 35%, #D4AF37 65%, #9A7B1C 100%)',
@@ -481,7 +491,7 @@ function ProfitCalculator() {
         </h2>
         <p style={{
           fontFamily: 'var(--font-ui)', fontSize: 'clamp(14px, 2vw, 17px)',
-          fontWeight: 300, color: 'rgba(184,176,160,0.6)',
+          fontWeight: 300, color: 'var(--text-secondary)',
           maxWidth: 460, margin: '16px auto 0', lineHeight: 1.6,
         }}>
           Adjust your investment and see real-time projections based on your tier’s daily rate.
@@ -521,7 +531,7 @@ function ProfitCalculator() {
                   height: 36, padding: '0 14px', borderRadius: 10,
                   border: `1px solid ${investment === p ? 'rgba(212,175,55,0.5)' : 'rgba(212,175,55,0.14)'}`,
                   background: investment === p ? 'rgba(212,175,55,0.12)' : 'transparent',
-                  color: investment === p ? '#F5C518' : 'rgba(184,176,160,0.5)',
+                  color: investment === p ? '#F5C518' : 'var(--text-muted)',
                   fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}>
@@ -546,7 +556,7 @@ function ProfitCalculator() {
                   borderRadius: 12,
                   border: '1px solid rgba(212,175,55,0.2)',
                   background: 'rgba(5,5,14,0.6)',
-                  color: '#F7F3E8', fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 600,
+                  color: 'var(--text-bright)', fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 600,
                   outline: 'none', boxSizing: 'border-box',
                 }}
               />
@@ -577,8 +587,8 @@ function ProfitCalculator() {
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(184,176,160,0.35)' }}>{tierMinRate}% min</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(184,176,160,0.35)' }}>{tierMaxRate}% max</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>{tierMinRate}% min</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>{tierMaxRate}% max</span>
             </div>
           </div>
 
@@ -600,7 +610,7 @@ function ProfitCalculator() {
                   flex: 1, minWidth: 48, height: 36, borderRadius: 10,
                   border: `1px solid ${days === d ? 'rgba(96,165,250,0.4)' : 'rgba(96,165,250,0.12)'}`,
                   background: days === d ? 'rgba(96,165,250,0.1)' : 'transparent',
-                  color: days === d ? '#60A5FA' : 'rgba(184,176,160,0.4)',
+                  color: days === d ? '#60A5FA' : 'var(--text-muted)',
                   fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600,
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}>
@@ -638,9 +648,9 @@ function ProfitCalculator() {
             </div>
             <p style={{
               fontFamily: 'var(--font-mono)', fontSize: 13,
-              color: 'rgba(184,176,160,0.45)', marginBottom: 32,
+              color: 'var(--text-muted)', marginBottom: 32,
             }}>
-              Total value: <span style={{ color: '#F7F3E8' }}>${totalValue.toFixed(2)}</span>
+              Total value: <span style={{ color: 'var(--text-bright)' }}>${totalValue.toFixed(2)}</span>
             </p>
           </div>
 
@@ -661,7 +671,7 @@ function ProfitCalculator() {
                   {row.locked && <Lock style={{ width: 11, height: 11, color: row.color, opacity: 0.6 }} />}
                   <span style={{
                     fontFamily: 'var(--font-ui)', fontSize: 13,
-                    color: 'rgba(184,176,160,0.6)',
+                    color: 'var(--text-secondary)',
                   }}>{row.label}</span>
                 </div>
                 <span style={{
@@ -774,7 +784,7 @@ function HowItWorksSection() {
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(36px, 5vw, 58px)',
             fontWeight: 700, lineHeight: 1.05,
-            color: '#F7F3E8', letterSpacing: '-0.01em',
+            color: 'var(--text-bright)', letterSpacing: '-0.01em',
           }}>
             4 Steps to{' '}
             <span style={{
@@ -838,13 +848,13 @@ function HowItWorksSection() {
 
               <h4 style={{
                 fontFamily: 'var(--font-display)', fontSize: 22,
-                fontWeight: 700, color: '#F7F3E8',
+                fontWeight: 700, color: 'var(--text-bright)',
                 marginBottom: 10, letterSpacing: '0.01em',
               }}>{step.title}</h4>
 
               <p style={{
                 fontFamily: 'var(--font-ui)', fontSize: 13.5,
-                lineHeight: 1.7, color: 'rgba(184,176,160,0.7)',
+                lineHeight: 1.7, color: 'var(--text-secondary)',
                 fontWeight: 300,
               }}>{step.desc}</p>
             </motion.div>
@@ -866,7 +876,7 @@ const TIERS = [
     amount: 50,
     dailyMin: 0.25,
     dailyMax: 0.50,
-    color: '#60A5FA',
+    color: 'var(--tier-starter)',
     perks: ['$0.25–$0.50 daily profit', '0.5% – 1.0% daily rate', 'Withdraw at $50 profit', 'AI monitoring active'],
     popular: false,
   },
@@ -875,7 +885,7 @@ const TIERS = [
     amount: 500,
     dailyMin: 5.00,
     dailyMax: 6.00,
-    color: '#F5C518',
+    color: 'var(--tier-growth)',
     perks: ['$5.00–$6.00 daily profit', '1.0% – 1.2% daily rate', 'Priority AI data feed', 'Full dashboard access'],
     popular: true,
   },
@@ -884,7 +894,7 @@ const TIERS = [
     amount: 5000,
     dailyMin: 60.00,
     dailyMax: 75.00,
-    color: '#4ADE80',
+    color: 'var(--tier-elite)',
     perks: ['$60–$75 daily profit', '1.2% – 1.5% daily rate', 'Highest yield tier', 'Advanced profit tracking'],
     popular: false,
   },
@@ -908,13 +918,13 @@ function InvestmentTiers() {
         <p style={{
           fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
           letterSpacing: '0.14em', textTransform: 'uppercase',
-          color: 'rgba(212,175,55,0.5)', marginBottom: 12,
-        }}>Investment Plans</p>
+          color: 'var(--gold-500)', marginBottom: 12,
+        }}>Pricing Plans</p>
         <h2 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(36px, 5vw, 58px)',
           fontWeight: 700, lineHeight: 1.05,
-          color: '#F7F3E8', letterSpacing: '-0.01em',
+          color: 'var(--text-bright)', letterSpacing: '-0.01em',
         }}>
           Start at Any{' '}
           <span style={{
@@ -924,7 +934,7 @@ function InvestmentTiers() {
         </h2>
         <p style={{
           fontFamily: 'var(--font-ui)', fontSize: 'clamp(14px, 2vw, 17px)',
-          fontWeight: 300, color: 'rgba(184,176,160,0.6)',
+          fontWeight: 300, color: 'var(--text-secondary)',
           maxWidth: 460, margin: '16px auto 0', lineHeight: 1.6,
         }}>
           Higher tiers earn higher daily rates. Scale up when you're ready.
@@ -943,15 +953,13 @@ function InvestmentTiers() {
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.55, delay: i * 0.1 }}
             style={{
-              background: tier.popular
-                ? 'linear-gradient(145deg, rgba(20,18,36,0.95) 0%, rgba(10,10,20,0.95) 100%)'
-                : 'linear-gradient(145deg, rgba(13,12,26,0.80) 0%, rgba(7,7,13,0.90) 100%)',
-              border: `1px solid ${tier.popular ? 'rgba(212,175,55,0.35)' : 'rgba(212,175,55,0.10)'}`,
+              background: 'var(--glass-2)',
+              border: `1px solid ${tier.popular ? 'var(--gold-500)' : 'var(--glass-border)'}`,
               borderRadius: 24,
               overflow: 'hidden',
               position: 'relative',
               transform: tier.popular ? 'scale(1.03)' : 'scale(1)',
-              boxShadow: tier.popular ? '0 24px 80px rgba(212,175,55,0.12)' : 'none',
+              boxShadow: tier.popular ? 'var(--shadow-float), var(--glow-sm)' : 'var(--shadow-card)',
             }}
           >
             {/* Popular badge */}
@@ -970,7 +978,7 @@ function InvestmentTiers() {
                 border: '1px solid rgba(212,175,55,0.3)',
                 fontFamily: 'var(--font-ui)', fontSize: 9.5, fontWeight: 700,
                 letterSpacing: '0.08em', textTransform: 'uppercase',
-                color: '#F5C518',
+                color: 'var(--gold-500)',
               }}>Most Popular</div>
             )}
 
@@ -986,26 +994,26 @@ function InvestmentTiers() {
               <div style={{
                 fontFamily: 'var(--font-display)', fontSize: 52,
                 fontWeight: 700, lineHeight: 1,
-                color: '#F7F3E8', marginBottom: 4,
+                color: 'var(--text-bright)', marginBottom: 4,
               }}>
                 ${tier.amount}
               </div>
               <p style={{
                 fontFamily: 'var(--font-ui)', fontSize: 12,
-                color: 'rgba(184,176,160,0.4)', marginBottom: 24,
+                color: 'var(--text-muted)', marginBottom: 24,
               }}>minimum deposit</p>
 
               {/* Daily range */}
               <div style={{
                 padding: '14px 18px', borderRadius: 14,
-                background: `${tier.color}0A`,
-                border: `1px solid ${tier.color}22`,
+                background: `color-mix(in srgb, ${tier.color} 4%, transparent)`,
+                border: `1px solid color-mix(in srgb, ${tier.color} 13%, transparent)`,
                 marginBottom: 28,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
                 <span style={{
                   fontFamily: 'var(--font-ui)', fontSize: 12,
-                  color: 'rgba(184,176,160,0.5)',
+                  color: 'var(--text-muted)',
                 }}>Daily profit</span>
                 <span style={{
                   fontFamily: 'var(--font-mono)', fontSize: 16,
@@ -1021,8 +1029,8 @@ function InvestmentTiers() {
                   <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
                       width: 18, height: 18, borderRadius: '50%',
-                      background: `${tier.color}18`,
-                      border: `1px solid ${tier.color}35`,
+                      background: `color-mix(in srgb, ${tier.color} 10%, transparent)`,
+                      border: `1px solid color-mix(in srgb, ${tier.color} 21%, transparent)`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
                     }}>
@@ -1030,7 +1038,7 @@ function InvestmentTiers() {
                     </div>
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: 13,
-                      color: 'rgba(184,176,160,0.7)', fontWeight: 300,
+                      color: 'var(--text-secondary)', fontWeight: 300,
                     }}>{perk}</span>
                   </div>
                 ))}
@@ -1040,10 +1048,10 @@ function InvestmentTiers() {
               <Link to="/register" style={{ textDecoration: 'none' }}>
                 <button style={{
                   width: '100%', height: 48, borderRadius: 12,
-                  border: `1px solid ${tier.popular ? 'rgba(212,175,55,0.3)' : `${tier.color}25`}`,
+                  border: `1px solid ${tier.popular ? 'rgba(212,175,55,0.3)' : `color-mix(in srgb, ${tier.color} 15%, transparent)`}`,
                   background: tier.popular
                     ? 'linear-gradient(135deg, #D4AF37 0%, #C19B2E 55%, #9A7B1C 100%)'
-                    : `${tier.color}12`,
+                    : `color-mix(in srgb, ${tier.color} 7%, transparent)`,
                   color: tier.popular ? '#07070D' : tier.color,
                   fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 700,
                   cursor: 'pointer', letterSpacing: '0.02em',
@@ -1142,7 +1150,7 @@ function TrustSection() {
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(36px, 5vw, 58px)',
             fontWeight: 700, lineHeight: 1.05,
-            color: '#F7F3E8', letterSpacing: '-0.01em',
+            color: 'var(--text-bright)', letterSpacing: '-0.01em',
           }}>
             Built on{' '}
             <span style={{
@@ -1183,11 +1191,11 @@ function TrustSection() {
               <div>
                 <h4 style={{
                   fontFamily: 'var(--font-display)', fontSize: 18,
-                  fontWeight: 700, color: '#F7F3E8', marginBottom: 6,
+                  fontWeight: 700, color: 'var(--text-bright)', marginBottom: 6,
                 }}>{item.title}</h4>
                 <p style={{
                   fontFamily: 'var(--font-ui)', fontSize: 13,
-                  lineHeight: 1.65, color: 'rgba(184,176,160,0.65)',
+                  lineHeight: 1.65, color: 'var(--text-secondary)',
                   fontWeight: 300, margin: 0,
                 }}>{item.desc}</p>
               </div>
@@ -1246,7 +1254,7 @@ function PlatformHighlights() {
             <span style={{
               fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase',
-              color: 'rgba(184,176,160,0.7)',
+              color: 'var(--text-secondary)',
             }}>Platform Overview</span>
           </div>
           <span style={{
@@ -1292,7 +1300,7 @@ function PlatformHighlights() {
                 </div>
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 500,
-                  color: 'rgba(184,176,160,0.55)', marginTop: 6,
+                  color: 'var(--text-muted)', marginTop: 6,
                   letterSpacing: '0.04em', textTransform: 'uppercase',
                 }}>
                   {item.label}
@@ -1363,7 +1371,7 @@ function FAQSection() {
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(36px, 5vw, 58px)',
           fontWeight: 700, lineHeight: 1.05,
-          color: '#F7F3E8', letterSpacing: '-0.01em',
+          color: 'var(--text-bright)', letterSpacing: '-0.01em',
         }}>
           Frequently Asked{' '}
           <span style={{
@@ -1407,7 +1415,7 @@ function FAQSection() {
                 background: openIndex === i ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${openIndex === i ? 'rgba(212,175,55,0.28)' : 'rgba(255,255,255,0.06)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: openIndex === i ? '#F5C518' : 'rgba(184,176,160,0.4)',
+                color: openIndex === i ? '#F5C518' : 'var(--text-muted)',
                 fontSize: 16, fontWeight: 300, transition: 'all 0.25s',
                 transform: openIndex === i ? 'rotate(45deg)' : 'rotate(0deg)',
               }}>+</span>
@@ -1429,7 +1437,7 @@ function FAQSection() {
                   }}>
                     <p style={{
                       fontFamily: 'var(--font-ui)', fontSize: 14,
-                      lineHeight: 1.7, color: 'rgba(184,176,160,0.7)',
+                      lineHeight: 1.7, color: 'var(--text-secondary)',
                       fontWeight: 300, margin: 0,
                     }}>{faq.a}</p>
                   </div>
@@ -1494,7 +1502,7 @@ function Ticker() {
             fontWeight: 500, letterSpacing: '0.06em',
             color: item.startsWith('●')
               ? 'rgba(212,175,55,0.65)'
-              : 'rgba(184,176,160,0.45)',
+              : 'var(--text-muted)',
           }}>
             {item}
           </span>
@@ -1654,7 +1662,7 @@ export function LandingPage() {
       <div style={{
         width: '100%', flex: 1,
         fontFamily: 'var(--font-ui)',
-        color: '#F7F3E8',
+        color: 'var(--text-bright)',
         background: 'transparent',
       }}>
 
@@ -1773,7 +1781,7 @@ export function LandingPage() {
                   transition={{ duration: 0.65, delay: 0.2 }}
                   style={{ marginBottom: 24 }}
                 >
-                  <h1 className="lp-hero-title" style={{ color: '#F7F3E8', display: 'block', marginBottom: 4 }}>
+                  <h1 className="lp-hero-title" style={{ color: 'var(--text-bright)', display: 'block', marginBottom: 4 }}>
                     Invest in Gold.<br />
                     <span className="lp-gold-text">Earn Daily.</span>
                   </h1>
@@ -1801,7 +1809,7 @@ export function LandingPage() {
                     style={{
                       fontFamily: 'var(--font-ui)', fontSize: 'clamp(14px, 1.8vw, 16px)',
                       fontWeight: 300, lineHeight: 1.6,
-                      color: 'rgba(184,176,160,0.92)',
+                      color: 'var(--text-secondary)',
                       marginBottom: 12,
                     }}
                   >
@@ -1815,7 +1823,7 @@ export function LandingPage() {
                     style={{
                       fontFamily: 'var(--font-ui)', fontSize: 12,
                       fontWeight: 400, lineHeight: 1.55,
-                      color: 'rgba(184,176,160,0.45)',
+                      color: 'var(--text-muted)',
                     }}
                   >
                     Withdraw your profit once it reaches $50. Your deposit stays locked
@@ -1906,7 +1914,7 @@ export function LandingPage() {
                         borderRadius: 14,
                         border: `1px solid ${ctaHover === 'ghost' ? 'rgba(212,175,55,0.4)' : 'rgba(212,175,55,0.15)'}`,
                         background: ctaHover === 'ghost' ? 'rgba(212,175,55,0.07)' : 'transparent',
-                        color: ctaHover === 'ghost' ? '#F5C518' : 'rgba(184,176,160,0.7)',
+                        color: ctaHover === 'ghost' ? '#F5C518' : 'var(--text-secondary)',
                         fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500,
                         cursor: 'pointer', letterSpacing: '0.01em',
                         transition: 'all 0.22s ease',
@@ -1988,7 +1996,7 @@ export function LandingPage() {
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: 9.5, fontWeight: 600,
                       letterSpacing: '0.1em', textTransform: 'uppercase',
-                      color: 'rgba(184,176,160,0.5)',
+                      color: 'var(--text-muted)',
                     }}>Live Profit</span>
                   </div>
                   <div style={{
@@ -2028,7 +2036,7 @@ export function LandingPage() {
                     <div>
                       <div style={{
                         fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 600,
-                        color: '#F7F3E8', letterSpacing: '0.04em',
+                        color: 'var(--text-bright)', letterSpacing: '0.04em',
                       }}>Live XAUUSD</div>
                       <div style={{
                         fontFamily: 'var(--font-mono)', fontSize: 10,
@@ -2051,7 +2059,7 @@ export function LandingPage() {
                     <div>
                       <div style={{
                         fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 600,
-                        color: '#F7F3E8',
+                        color: 'var(--text-bright)',
                       }}>Secured</div>
                       <div style={{
                         fontFamily: 'var(--font-mono)', fontSize: 10,
@@ -2096,7 +2104,7 @@ export function LandingPage() {
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(36px, 5vw, 58px)',
               fontWeight: 700, lineHeight: 1.05,
-              color: '#F7F3E8',
+              color: 'var(--text-bright)',
               letterSpacing: '-0.01em',
             }}>
               Simple &<br />
@@ -2165,14 +2173,14 @@ export function LandingPage() {
                 fontFamily: 'var(--font-display)',
                 fontSize: 'clamp(36px, 5vw, 58px)',
                 fontWeight: 700, lineHeight: 1.05,
-                color: '#F7F3E8', letterSpacing: '-0.01em',
+                color: 'var(--text-bright)', letterSpacing: '-0.01em',
               }}>
                 Real-Data Workflow.
               </h2>
               <p style={{
                 fontFamily: 'var(--font-ui)', fontSize: 'clamp(14px, 2vw, 18px)',
                 fontWeight: 300, lineHeight: 1.6,
-                color: 'rgba(184,176,160,0.65)',
+                color: 'var(--text-secondary)',
                 maxWidth: 500, margin: '16px auto 0',
               }}>
                 Built to display verified platform data only — no fabricated results, ever.
@@ -2262,14 +2270,14 @@ export function LandingPage() {
                 letterSpacing: '-0.01em',
                 marginBottom: 16,
               }}>
-                <span style={{ color: '#F7F3E8' }}>Ready to grow</span>{' '}
+                <span style={{ color: 'var(--text-bright)' }}>Ready to grow</span>{' '}
                 <span className="lp-gold-text">your capital?</span>
               </h2>
 
               <p style={{
                 fontFamily: 'var(--font-ui)', fontSize: 'clamp(14px, 2vw, 17px)',
                 fontWeight: 300, lineHeight: 1.65,
-                color: 'rgba(184,176,160,0.6)',
+                color: 'var(--text-secondary)',
                 maxWidth: 460, margin: '0 auto 32px',
               }}>
                 Deposit starts at $50. No lock-in commitment beyond your principal.
@@ -2311,7 +2319,7 @@ export function LandingPage() {
                     borderRadius: 14,
                     border: '1px solid rgba(212,175,55,0.12)',
                     background: 'transparent',
-                    color: 'rgba(184,176,160,0.5)',
+                    color: 'var(--text-muted)',
                     fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 400,
                     cursor: 'pointer', letterSpacing: '0.01em',
                     transition: 'all 0.22s ease',

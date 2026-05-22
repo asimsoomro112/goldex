@@ -22,28 +22,28 @@ const STYLES = `
   }
 
   .info-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.7) 0%, rgba(8,8,15,0.85) 100%);
-    border: 1px solid rgba(212,175,55,0.12);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: var(--shadow-card);
     transition: all 0.3s ease;
   }
 
   .info-card:hover {
-    border-color: rgba(212,175,55,0.28);
-    background: rgba(212,175,55,0.02);
+    border-color: var(--gb-hover);
+    background: var(--glass-hover);
   }
 
   .policy-container {
-    background: linear-gradient(135deg, rgba(13,12,26,0.75) 0%, rgba(8,8,15,0.85) 100%);
-    border: 1px solid rgba(212,175,55,0.14);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 24px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
   }
 
   .policy-row {
-    border-bottom: 1px solid rgba(212,175,55,0.08);
+    border-bottom: 1px solid var(--glass-border);
     transition: background 0.25s ease;
   }
 
@@ -52,37 +52,37 @@ const STYLES = `
   }
 
   .policy-row:hover {
-    background: rgba(212,175,55,0.015);
+    background: var(--glass-hover);
   }
 `;
 
 function IntegrityPromiseCard() {
   return (
     <div className="integrity-promise" style={{
-      background: 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, rgba(8,8,15,0.8) 100%)',
-      border: '1px dashed rgba(212,175,55,0.25)',
+      background: 'linear-gradient(135deg, color-mix(in srgb, var(--gold-500) 8%, transparent) 0%, var(--glass-3) 100%)',
+      border: '1px dashed var(--gold-500)',
       borderRadius: '20px',
       padding: '32px 28px',
       marginTop: '44px',
       position: 'relative',
-      boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
+      boxShadow: 'var(--shadow-card)',
       overflow: 'hidden',
     }}>
       {/* Top glowing gold accent */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-        background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.4), transparent)',
+        background: 'linear-gradient(90deg, transparent, var(--gold-500), transparent)',
       }} />
 
       <h3 style={{
         fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700,
-        color: '#F5C518', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8,
+        color: 'var(--gold-500)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8,
       }}>
         ✨ Our Reality & Transparency Pledge
       </h3>
 
       <p style={{
-        fontSize: 14, lineHeight: 1.7, color: 'rgba(184,176,160,0.92)',
+        fontSize: 14, lineHeight: 1.7, color: 'var(--text-primary)',
         fontWeight: 400, marginBottom: 16,
       }}>
         Unlike other platforms that run fraudulent schemes promising high synthetic, daily fixed returns (which always fail), GoldEx operates strictly on <strong>real-market gold trading and physical asset reserves</strong>. A real trading business does not promise fixed yields or synthetic guarantees, and we stand for absolute truth.
@@ -90,9 +90,9 @@ function IntegrityPromiseCard() {
 
       <div style={{
         padding: '16px 20px', borderRadius: 12,
-        background: 'rgba(239, 68, 68, 0.05)',
-        border: '1px solid rgba(239, 68, 68, 0.15)',
-        fontSize: 13, lineHeight: 1.6, color: '#FCA5A5',
+        background: 'color-mix(in srgb, var(--loss) 7%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--loss) 25%, transparent)',
+        fontSize: 13, lineHeight: 1.6, color: 'var(--loss)',
       }}>
         <strong>⚠️ Risk & Responsibility Warning:</strong> Daily profit is never fixed or guaranteed because the gold spot market is dynamic and inherently carries risk. We strongly advise that you <strong>only invest capital you can comfortably afford to lose</strong>. Reality is our highest value, and that is why GoldEx represents the honest difference in digital trading.
       </div>
@@ -254,12 +254,24 @@ export function ReferralPolicyPage() {
 
 export function NotFoundPage() {
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-24">
-      <div className="max-w-lg text-center">
-        <p className="text-gold-500 font-mono text-sm mb-3">404</p>
-        <h1 className="font-display text-4xl text-white mb-4">Page not found</h1>
-        <p className="text-sm text-text-secondary leading-7 mb-6">The page you opened does not exist or has moved.</p>
-        <Link to="/" className="btn-gold inline-flex h-11 px-6 rounded-xl items-center justify-center">Return Home</Link>
+    <section style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '96px 16px 0', fontFamily: 'var(--font-ui)', color: 'var(--text-primary)',
+    }}>
+      <div style={{ maxWidth: 480, textAlign: 'center' }}>
+        <p style={{ color: 'var(--gold-500)', fontFamily: 'var(--font-mono)', fontSize: 14, marginBottom: 12 }}>404</p>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--text-bright)', marginBottom: 16 }}>Page not found</h1>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>The page you opened does not exist or has moved.</p>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <button style={{
+            display: 'inline-flex', height: 44, padding: '0 24px', borderRadius: 12,
+            background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+            color: 'var(--b-900)', fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 700,
+            border: 'none', cursor: 'pointer', boxShadow: 'var(--shadow-btn)',
+          }}>
+            Return Home
+          </button>
+        </Link>
       </div>
     </section>
   );
@@ -303,27 +315,27 @@ function InfoShell({
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '6px 14px', borderRadius: 999,
-              background: 'rgba(212,175,55,0.08)',
-              border: '1px solid rgba(212,175,55,0.22)',
+              background: 'color-mix(in srgb, var(--gold-500) 8%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--gold-500) 22%, transparent)',
               fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-              textTransform: 'uppercase', color: '#D4AF37',
+              textTransform: 'uppercase', color: 'var(--gold-500)',
               marginBottom: 20,
             }}>
               <Icon style={{ width: 13, height: 13 }} />
               {eyebrow}
             </div>
 
-            <h1 className="info-title" style={{ color: '#F7F3E8', marginBottom: 20 }}>{title}</h1>
+            <h1 className="info-title" style={{ color: 'var(--text-bright)', marginBottom: 20 }}>{title}</h1>
             
             <p style={{
               fontSize: 'clamp(15px, 2vw, 17px)', fontWeight: 300,
-              lineHeight: 1.65, color: 'rgba(184,176,160,0.75)',
+              lineHeight: 1.65, color: 'var(--text-secondary)',
               maxWidth: 820,
             }}>{intro}</p>
             
             <p style={{
               fontFamily: 'var(--font-mono)', fontSize: 10,
-              color: 'rgba(212,175,55,0.4)', letterSpacing: '0.06em',
+              color: 'color-mix(in srgb, var(--gold-500) 50%, transparent)', letterSpacing: '0.06em',
               textTransform: 'uppercase', marginTop: 16,
             }}>Last updated: {updated}</p>
           </div>
@@ -335,13 +347,13 @@ function InfoShell({
             marginTop: 40,
             padding: '24px 28px',
             borderRadius: 20,
-            background: 'linear-gradient(135deg, rgba(13,12,26,0.5) 0%, rgba(8,8,15,0.7) 100%)',
-            border: '1px solid rgba(212,175,55,0.1)',
+            background: 'var(--glass-2)',
+            border: '1px solid var(--glass-border)',
             fontSize: 13.5,
-            color: 'rgba(184,176,160,0.75)',
+            color: 'var(--text-secondary)',
             lineHeight: 1.6,
           }}>
-            Need account access? <Link to="/login" style={{ color: '#F5C518', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link> or create an account from the registration page.
+            Need account access? <Link to="/login" style={{ color: 'var(--gold-500)', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link> or create an account from the registration page.
           </div>
         </div>
       </section>
@@ -360,11 +372,11 @@ function InfoGrid({ items }: { items: Array<[string, string]> }) {
         <div key={title} className="info-card" style={{ padding: '28px 24px' }}>
           <h2 style={{
             fontFamily: 'var(--font-display)', fontSize: 22,
-            fontWeight: 700, color: '#F7F3E8', marginBottom: 12,
+            fontWeight: 700, color: 'var(--text-bright)', marginBottom: 12,
           }}>{title}</h2>
           <p style={{
             fontSize: 13.5, lineHeight: 1.65,
-            color: 'rgba(184,176,160,0.72)',
+            color: 'var(--text-secondary)',
             fontWeight: 300,
           }}>{body}</p>
         </div>
@@ -380,11 +392,11 @@ function PolicyList({ items }: { items: Array<[string, string]> }) {
         <div key={title} className="policy-row" style={{ padding: '28px 24px' }}>
           <h2 style={{
             fontFamily: 'var(--font-display)', fontSize: 21,
-            fontWeight: 700, color: '#F7F3E8', marginBottom: 8,
+            fontWeight: 700, color: 'var(--text-bright)', marginBottom: 8,
           }}>{title}</h2>
           <p style={{
             fontSize: 13.5, lineHeight: 1.65,
-            color: 'rgba(184,176,160,0.72)',
+            color: 'var(--text-secondary)',
             fontWeight: 300,
           }}>{body}</p>
         </div>

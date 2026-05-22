@@ -12,6 +12,18 @@ const STYLES = `
     --surface-900: #08080F;
     --font-display: 'Cormorant Garamond', Georgia, serif;
     --font-ui: 'Outfit', sans-serif;
+
+    --step-1: #60A5FA;
+    --step-2: #D4AF37;
+    --step-3: #F472B6;
+    --step-4: #4ADE80;
+  }
+
+  :root[data-theme="light"] {
+    --step-1: #1D4ED8;
+    --step-2: #8B6914;
+    --step-3: #DB2777;
+    --step-4: #047857;
   }
 
   @keyframes cardFloat {
@@ -28,18 +40,18 @@ const STYLES = `
   }
 
   .how-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.85) 0%, rgba(8,8,15,0.90) 100%);
-    border: 1px solid rgba(212,175,55,0.12);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 24px;
     overflow: hidden;
     position: relative;
     transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-card);
   }
 
   .how-card:hover {
-    border-color: rgba(212,175,55,0.3);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,175,55,0.08);
+    border-color: var(--gb-hover);
+    box-shadow: var(--shadow-float);
     transform: translateY(-5px);
   }
 `;
@@ -50,7 +62,7 @@ const STEPS = [
     label: 'Create Account',
     icon: UserPlus,
     img: '/images/Create Account.png',
-    accentColor: '#60A5FA',
+    accentColor: 'var(--step-1)',
     desc: 'Sign up to gain access to our secure platform. Every user account is secured by our enterprise-grade cryptographic authentication protocols to ensure maximum data privacy and protection.',
   },
   {
@@ -58,7 +70,7 @@ const STEPS = [
     label: 'Fund Wallet (USDT BEP20)',
     icon: Wallet,
     img: '/images/Invest $50.png',
-    accentColor: '#D4AF37',
+    accentColor: 'var(--step-2)',
     desc: 'Deposit a minimum of $50 using USDT (BEP20). Your capital is securely locked and verified by our admins, granting you immediate access to our live trading pools.',
   },
   {
@@ -66,7 +78,7 @@ const STEPS = [
     label: 'AI Trading Execution',
     icon: Sparkles,
     img: '/images/Step 3 — AI Trades Gold.png',
-    accentColor: '#F472B6',
+    accentColor: 'var(--step-3)',
     desc: 'Our Claude-powered AI engine analyzes thousands of market data points on the XAUUSD pair, executing high-probability trades with a strict drawdown limit.',
   },
   {
@@ -74,7 +86,7 @@ const STEPS = [
     label: 'Daily Profit Withdrawal',
     icon: TrendingUp,
     img: '/images/Step 4 Earn Daily Profits.png',
-    accentColor: '#4ADE80',
+    accentColor: 'var(--step-4)',
     desc: 'Sit back and watch your dashboard as you accumulate daily profits ranging from 0.5% to 1.0%. Once your profits cross the $50 threshold, you can withdraw directly.',
   },
 ];
@@ -90,7 +102,7 @@ export function HowItWorksPage() {
       <div style={{
         width: '100%', flex: 1,
         fontFamily: 'var(--font-ui)',
-        color: '#F7F3E8',
+        color: 'var(--text-primary)',
         background: 'transparent',
         position: 'relative',
         zIndex: 10,
@@ -124,10 +136,10 @@ export function HowItWorksPage() {
                 marginBottom: 20,
               }}
             >
-              <ShieldCheck style={{ width: 13, height: 13, color: '#D4AF37' }} />
+              <ShieldCheck style={{ width: 13, height: 13, color: 'var(--gold-500)' }} />
               <span style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: '#D4AF37',
+                textTransform: 'uppercase', color: 'var(--gold-500)',
               }}>Execution Mechanism</span>
             </motion.div>
 
@@ -136,10 +148,10 @@ export function HowItWorksPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="how-title"
-              style={{ color: '#F7F3E8', marginBottom: 20 }}
+              style={{ color: 'var(--text-bright)', marginBottom: 20 }}
             >
               How <span style={{
-                background: 'linear-gradient(135deg, #FFD97D 0%, #F5C518 35%, #D4AF37 65%, #9A7B1C 100%)',
+                background: 'var(--grad-gold-text)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
               }}>GoldEx</span> Works
@@ -151,7 +163,7 @@ export function HowItWorksPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               style={{
                 fontSize: 'clamp(15px, 2vw, 18px)', fontWeight: 300,
-                lineHeight: 1.6, color: 'rgba(184,176,160,0.75)',
+                lineHeight: 1.6, color: 'var(--text-secondary)',
                 maxWidth: 620, margin: '0 auto',
               }}
             >
@@ -197,7 +209,7 @@ export function HowItWorksPage() {
                   <div style={{
                     position: 'absolute', top: -30, left: -30,
                     width: 100, height: 100, borderRadius: '50%',
-                    background: `radial-gradient(circle, ${step.accentColor}18, transparent)`,
+                    background: `radial-gradient(circle, color-mix(in srgb, ${step.accentColor} 9%, transparent), transparent)`,
                     opacity: isHovered ? 1 : 0,
                     transition: 'opacity 0.35s',
                     pointerEvents: 'none',
@@ -206,9 +218,9 @@ export function HowItWorksPage() {
                   {/* Step Image */}
                   <div style={{
                     position: 'relative',
-                    background: '#07070D',
+                    background: 'var(--surface-950)',
                     overflow: 'hidden',
-                    borderBottom: '1px solid rgba(212,175,55,0.08)',
+                    borderBottom: '1px solid var(--glass-border)',
                   }}>
                     <img
                       src={step.img}
@@ -230,8 +242,8 @@ export function HowItWorksPage() {
                     }}>
                       <div style={{
                         width: 38, height: 38, borderRadius: 12,
-                        background: `linear-gradient(135deg, ${step.accentColor}22 0%, ${step.accentColor}06 100%)`,
-                        border: `1px solid ${step.accentColor}25`,
+                        background: `linear-gradient(135deg, color-mix(in srgb, ${step.accentColor} 13%, transparent) 0%, color-mix(in srgb, ${step.accentColor} 3%, transparent) 100%)`,
+                        border: `1px solid color-mix(in srgb, ${step.accentColor} 15%, transparent)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: step.accentColor,
                       }}>
@@ -241,7 +253,7 @@ export function HowItWorksPage() {
                         <span style={{
                           fontFamily: 'var(--font-display)',
                           fontSize: 22, fontWeight: 700,
-                          color: '#F7F3E8', display: 'block',
+                          color: 'var(--text-bright)', display: 'block',
                         }}>
                           <span style={{ color: step.accentColor, marginRight: 6 }}>{step.num}.</span>
                           {step.label}
@@ -251,7 +263,7 @@ export function HowItWorksPage() {
 
                     <p style={{
                       fontSize: 13.5, lineHeight: 1.65,
-                      color: 'rgba(184,176,160,0.72)',
+                      color: 'var(--text-secondary)',
                       fontWeight: 300,
                     }}>
                       {step.desc}
@@ -283,13 +295,13 @@ export function HowItWorksPage() {
                   borderRadius: 14,
                   border: '1px solid rgba(212,175,55,0.3)',
                   background: btnHover
-                    ? 'linear-gradient(135deg, #F5C518 0%, #D4AF37 55%, #B8962E 100%)'
-                    : 'linear-gradient(135deg, #D4AF37 0%, #C19B2E 55%, #9A7B1C 100%)',
-                  color: '#07070D',
+                    ? 'linear-gradient(135deg, var(--gold-400) 0%, var(--gold-500) 55%, var(--gold-600) 100%)'
+                    : 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+                  color: 'var(--b-900)',
                   fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 700,
                   cursor: 'pointer', letterSpacing: '0.02em',
                   boxShadow: btnHover
-                    ? '0 8px 32px rgba(212,175,55,0.55), inset 0 1px 0 rgba(255,255,255,0.25)'
+                    ? 'var(--shadow-btn)'
                     : '0 4px 20px rgba(212,175,55,0.3),  inset 0 1px 0 rgba(255,255,255,0.18)',
                   transform: btnHover ? 'translateY(-2px)' : 'translateY(0)',
                   transition: 'all 0.22s ease',

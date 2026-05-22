@@ -10,6 +10,16 @@ const STYLES = `
     --gold-600: #B8962E;
     --font-display: 'Cormorant Garamond', Georgia, serif;
     --font-ui: 'Outfit', sans-serif;
+
+    --ref-1: #60A5FA;
+    --ref-2: #D4AF37;
+    --ref-3: #4ADE80;
+  }
+
+  :root[data-theme="light"] {
+    --ref-1: #1D4ED8;
+    --ref-2: #8B6914;
+    --ref-3: #047857;
   }
 
   .ref-title {
@@ -21,24 +31,24 @@ const STYLES = `
   }
 
   .ref-container {
-    background: linear-gradient(135deg, rgba(13,12,26,0.75) 0%, rgba(8,8,15,0.85) 100%);
-    border: 1px solid rgba(212,175,55,0.12);
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border);
     border-radius: 32px;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
   }
 
   .ref-step-card {
-    background: linear-gradient(135deg, rgba(13,12,26,0.6) 0%, rgba(8,8,15,0.8) 100%);
-    border: 1px solid rgba(212,175,55,0.08);
+    background: var(--glass-3);
+    border: 1px solid var(--glass-border);
     border-radius: 20px;
     padding: 24px;
     transition: all 0.3s ease;
   }
 
   .ref-step-card:hover {
-    border-color: rgba(212,175,55,0.25);
-    background: rgba(212,175,55,0.02);
+    border-color: var(--gb-hover);
+    background: var(--glass-hover);
     transform: translateY(-2px);
   }
 `;
@@ -49,21 +59,21 @@ const STEPS = [
     title: 'Create Account',
     text: 'Your account must exist before a referral link can be generated.',
     icon: Users,
-    color: '#60A5FA',
+    color: 'var(--ref-1)',
   },
   {
     num: '2',
     title: 'Share Live Link',
     text: 'Referral links are generated from verified live account data only.',
     icon: Share2,
-    color: '#D4AF37',
+    color: 'var(--ref-2)',
   },
   {
     num: '3',
     title: 'Accumulate Rewards',
     text: 'Track commission history securely as payments are processed.',
     icon: Coins,
-    color: '#4ADE80',
+    color: 'var(--ref-3)',
   },
 ];
 
@@ -78,7 +88,7 @@ export function ReferralLandingPage() {
       <div style={{
         width: '100%', flex: 1,
         fontFamily: 'var(--font-ui)',
-        color: '#F7F3E8',
+        color: 'var(--text-primary)',
         background: 'transparent',
         position: 'relative',
         zIndex: 10,
@@ -112,10 +122,10 @@ export function ReferralLandingPage() {
                 marginBottom: 20,
               }}
             >
-              <Sparkles style={{ width: 13, height: 13, color: '#D4AF37' }} />
+              <Sparkles style={{ width: 13, height: 13, color: 'var(--gold-500)' }} />
               <span style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: '#D4AF37',
+                textTransform: 'uppercase', color: 'var(--gold-500)',
               }}>Invite & Earn</span>
             </motion.div>
 
@@ -124,10 +134,10 @@ export function ReferralLandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="ref-title"
-              style={{ color: '#F7F3E8', marginBottom: 20 }}
+              style={{ color: 'var(--text-bright)', marginBottom: 20 }}
             >
               Referral <span style={{
-                background: 'linear-gradient(135deg, #FFD97D 0%, #F5C518 35%, #D4AF37 65%, #9A7B1C 100%)',
+                background: 'var(--grad-gold-text)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
               }}>Program</span>
@@ -139,7 +149,7 @@ export function ReferralLandingPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               style={{
                 fontSize: 'clamp(15px, 2vw, 18px)', fontWeight: 300,
-                lineHeight: 1.6, color: 'rgba(184,176,160,0.75)',
+                lineHeight: 1.6, color: 'var(--text-secondary)',
                 maxWidth: 620, margin: '0 auto',
               }}
             >
@@ -156,7 +166,7 @@ export function ReferralLandingPage() {
           <div className="ref-container" style={{ position: 'relative' }}>
             
             {/* Visual Node Graph illustration */}
-            <div style={{ position: 'relative', width: '100%', overflow: 'hidden', background: '#05050A' }}>
+            <div style={{ position: 'relative', width: '100%', overflow: 'hidden', background: 'var(--surface-950)' }}>
               <img
                 src="/images/Referral Hero Visual.png"
                 alt="Referral Network Nodes"
@@ -187,8 +197,8 @@ export function ReferralLandingPage() {
             {/* Steps Area */}
             <div style={{
               padding: '40px 32px',
-              borderTop: '1px solid rgba(212,175,55,0.08)',
-              background: 'rgba(9,9,18,0.3)',
+              borderTop: '1px solid var(--glass-border)',
+              background: 'var(--glass-2)',
             }}>
               <div style={{
                 display: 'grid',
@@ -213,10 +223,14 @@ export function ReferralLandingPage() {
                       {/* Step Badge */}
                       <div style={{
                         width: 44, height: 44, borderRadius: '50%',
-                        background: isHovered ? `${step.color}22` : 'rgba(212,175,55,0.06)',
-                        border: isHovered ? `1px solid ${step.color}35` : '1px solid rgba(212,175,55,0.15)',
+                        background: isHovered 
+                          ? `color-mix(in srgb, ${step.color} 13%, transparent)` 
+                          : 'color-mix(in srgb, var(--gold-500) 6%, transparent)',
+                        border: isHovered 
+                          ? `1px solid color-mix(in srgb, ${step.color} 25%, transparent)` 
+                          : '1px solid var(--glass-border)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: 16, color: isHovered ? step.color : '#D4AF37',
+                        marginBottom: 16, color: isHovered ? step.color : 'var(--gold-500)',
                         transition: 'all 0.3s ease',
                       }}>
                         <Icon style={{ width: 18, height: 18 }} />
@@ -224,12 +238,12 @@ export function ReferralLandingPage() {
 
                       <h3 style={{
                         fontFamily: 'var(--font-display)', fontSize: 20,
-                        fontWeight: 700, color: '#F7F3E8', marginBottom: 8,
+                        fontWeight: 700, color: 'var(--text-bright)', marginBottom: 8,
                       }}>{step.title}</h3>
 
                       <p style={{
                         fontSize: 13, lineHeight: 1.55,
-                        color: 'rgba(184,176,160,0.7)',
+                        color: 'var(--text-secondary)',
                         fontWeight: 300,
                       }}>{step.text}</p>
                     </div>
@@ -261,13 +275,13 @@ export function ReferralLandingPage() {
                   borderRadius: 14,
                   border: '1px solid rgba(212,175,55,0.3)',
                   background: btnHover
-                    ? 'linear-gradient(135deg, #F5C518 0%, #D4AF37 55%, #B8962E 100%)'
-                    : 'linear-gradient(135deg, #D4AF37 0%, #C19B2E 55%, #9A7B1C 100%)',
-                  color: '#07070D',
+                    ? 'linear-gradient(135deg, var(--gold-400) 0%, var(--gold-500) 55%, var(--gold-600) 100%)'
+                    : 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+                  color: 'var(--b-900)',
                   fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 700,
                   cursor: 'pointer', letterSpacing: '0.02em',
                   boxShadow: btnHover
-                    ? '0 8px 32px rgba(212,175,55,0.55), inset 0 1px 0 rgba(255,255,255,0.25)'
+                    ? 'var(--shadow-btn)'
                     : '0 4px 20px rgba(212,175,55,0.3),  inset 0 1px 0 rgba(255,255,255,0.18)',
                   transform: btnHover ? 'translateY(-2px)' : 'translateY(0)',
                   transition: 'all 0.22s ease',
