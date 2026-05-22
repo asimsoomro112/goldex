@@ -1,4 +1,4 @@
-import { sanitizeEmailPayload, sendGoldExEmail } from "./_services/emailService.js";
+import { createOtp, sanitizeEmailPayload, sendGoldExEmail } from "./_services/emailService.js";
 
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
@@ -9,19 +9,40 @@ export default async function handler(req: any, res: any) {
   }
 
   const ip = getClientIp(req);
-  if (isRateLimited(ip, 20, 60_000)) {
-    return res.status(429).json({ error: "Too many email requests. Try again later." });
-  }
+  const action = req.query.action || req.body.action;
 
-  try {
-    const payload = sanitizeEmailPayload(req.body);
-    await sendGoldExEmail(payload);
-    return res.status(200).json({ ok: true });
-  } catch (error: any) {
-    const badRequest = error.message?.includes("Invalid")
-      || error.message?.includes("required")
-      || error.message?.includes("Unsupported");
-    return res.status(badRequest ? 400 : 500).json({ error: error.message || "Email failed." });
+  if (action === "otp") {
+    // OTP rate limiting (max 5 requests per minute)
+    if (isRateLimited(ip, 5, 60_000)) {
+      return res.status(429).json({ error: "Too many OTP requests. Try again later." });
+    }
+
+    try {
+      const { to, name } = req.body || {};
+      if (!to) return res.status(400).json({ error: "Recipient email is required." });
+
+      const otp = createOtp();
+      await sendGoldExEmail({ type: "otp", to: String(to).trim(), name, data: { otp } });
+      return res.status(200).json({ ok: true, devOtp: process.env.NODE_ENV === "production" ? undefined : otp });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || "OTP email failed." });
+    }
+  } else {
+    // General email rate limiting (max 20 requests per minute)
+    if (isRateLimited(ip, 20, 60_000)) {
+      return res.status(429).json({ error: "Too many email requests. Try again later." });
+    }
+
+    try {
+      const payload = sanitizeEmailPayload(req.body);
+      await sendGoldExEmail(payload);
+      return res.status(200).json({ ok: true });
+    } catch (error: any) {
+      const badRequest = error.message?.includes("Invalid")
+        || error.message?.includes("required")
+        || error.message?.includes("Unsupported");
+      return res.status(badRequest ? 400 : 500).json({ error: error.message || "Email failed." });
+    }
   }
 }
 

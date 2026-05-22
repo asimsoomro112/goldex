@@ -3,6 +3,26 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/auth/forgot-password",
+      "destination": "/api/auth?action=forgot-password"
+    },
+    {
+      "source": "/api/auth/verify-reset-otp",
+      "destination": "/api/auth?action=verify-reset-otp"
+    },
+    {
+      "source": "/api/auth/reset-password",
+      "destination": "/api/auth?action=reset-password"
+    },
+    {
+      "source": "/api/email/otp",
+      "destination": "/api/email?action=otp"
+    },
+    {
+      "source": "/api/email",
+      "destination": "/api/email?action=send"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
